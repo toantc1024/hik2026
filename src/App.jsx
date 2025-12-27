@@ -15,6 +15,7 @@ import ImageUploader from "./components/ImageUploader";
 import CanvasPreview from "./components/CanvasPreview";
 import ImageFrameRenderer from "./components/ImageFrameRenderer";
 import ImageDownloader from "./components/ImageDownloader";
+import InAppBrowserAlert from "./components/InAppBrowserAlert";
 
 
 export default function ImageFrameOverlay() {
@@ -139,6 +140,9 @@ export default function ImageFrameOverlay() {
       padding: '.5rem .5rem',
       minHeight: '60vh'
     }}>
+      {/* Alert for in-app browsers like Zalo */}
+      <InAppBrowserAlert />
+
       <Container size="xl" px="md" py="xl" className="blue-theme-container">
         <Grid gutter="md">
           <Grid.Col sm={12} md={4}>

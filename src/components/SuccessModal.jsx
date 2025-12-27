@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Modal, Button, Group, Stack, Text, Alert, Box, CopyButton } from "@mantine/core";
-import { FiCheck, FiX, FiDownload, FiAlertCircle, FiShare2, FiExternalLink, FiCopy } from "react-icons/fi";
+import { Modal, Button, Group, Stack, Text, Alert, Box } from "@mantine/core";
+import { FiCheck, FiX, FiDownload, FiAlertCircle, FiShare2 } from "react-icons/fi";
 
 // Detect if running in a WebView (Zalo, Facebook, Messenger, etc.)
 function detectWebView() {
@@ -114,12 +114,6 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
         }
     };
 
-    // Open current page in external browser
-    const handleOpenInBrowser = () => {
-        // Copy current URL to clipboard and show instructions
-        navigator.clipboard?.writeText(window.location.href);
-    };
-
     return (
         <Modal
             opened={isOpen}
@@ -216,7 +210,7 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                             radius="xl"
                             loading={isSharing}
                         >
-                            📱 Lưu/Chia sẻ ảnh
+                            Lưu/Chia sẻ ảnh
                         </Button>
                     )}
 
@@ -249,38 +243,6 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                         >
                             Chia sẻ ảnh
                         </Button>
-                    )}
-
-                    {/* Alternative: Open in external browser */}
-                    {webViewInfo.isInAppBrowser && (
-                        <CopyButton value={window.location.href}>
-                            {({ copied, copy }) => (
-                                <Button
-                                    onClick={copy}
-                                    fullWidth
-                                    variant="outline"
-                                    color={copied ? "green" : "gray"}
-                                    leftSection={copied ? <FiCheck size={18} /> : <FiCopy size={18} />}
-                                    size="md"
-                                    radius="xl"
-                                >
-                                    {copied ? "Đã copy! Mở Chrome/Safari để dán" : "Copy link để mở bằng trình duyệt"}
-                                </Button>
-                            )}
-                        </CopyButton>
-                    )}
-
-                    {/* Fallback for in-app browsers without share API */}
-                    {!canShare && webViewInfo.isInAppBrowser && (
-                        <Alert
-                            icon={<FiExternalLink size={16} />}
-                            color="orange"
-                            radius="lg"
-                        >
-                            <Text size="sm">
-                                Nhấn dấu <strong>⋮</strong> (góc trên) → <strong>"Mở trong trình duyệt"</strong> để tải ảnh.
-                            </Text>
-                        </Alert>
                     )}
                 </Stack>
 
