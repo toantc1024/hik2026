@@ -1,0 +1,65 @@
+/* HCMUTE Blue theme styles */
+:root {
+  --blue-light: #E6F3FF;
+  --blue-medium: #0066CC;
+  --blue-dark: #004D99;
+  --purple-medium: #4D00CC;
+  --purple-dark: #3300A3;
+  --magenta-accent: #E6009E;
+  --hcmute-gradient: linear-gradient(135deg, #0066CC, #4D00CC);
+}
+
+.mantine-Paper-root {
+  background-color: var(--blue-light);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+}
+
+.mantine-Container-root {
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.1);
+}
+
+.mantine-Title-root {
+  color: var(--blue-dark);
+}
+
+.mantine-Text-root {
+  color: #333;
+}
+
+.mantine-NumberInput-input:focus,
+.mantine-TextInput-input:focus,
+.mantine-Textarea-input:focus {
+  border-color: var(--blue-medium) !important;
+}
+
+.mantine-Slider-bar {
+  background-color: var(--blue-medium);
+}
+
+.mantine-Slider-thumb {
+  background-color: var(--blue-medium);
+  border-color: white;
+}
+
+.mantine-Divider-root {
+  border-top-color: rgba(0, 102, 204, 0.2);
+}
+
+/* Tooltip styles */
+.mantine-Tooltip-tooltip {
+  background-color: var(--blue-dark);
+}
+
+/* Custom canvas border */
+canvas {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
+}
+
+/* HCMUTE button hover effect */
+.mantine-Button-filled:hover {
+  background-color: var(--blue-dark) !important;
+  background-image: var(--hcmute-gradient);
+}

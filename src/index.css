@@ -1,0 +1,21 @@
+body {
+  font-family: Inter, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "salt";
+  font-variation-settings: "cv02", "cv03", "cv04", "cv11", "salt";
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  /* Prevent zoom on mobile while still allowing pinch to zoom on images */
+  touch-action: pan-x pan-y;
+}
+
+canvas {
+  transition: all 0.3s ease;
+}
+
+.mantine-Button-root {
+  font-weight: 600;
+}
