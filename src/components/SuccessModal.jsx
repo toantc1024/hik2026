@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Modal, Button, Group, Stack, Text, Anchor, Alert, Image, Box } from "@mantine/core";
-import { FiCheck, FiX, FiDownload, FiAlertCircle, FiShare2 } from "react-icons/fi";
+import { Modal, Button, Group, Stack, Text, Alert, Box, CopyButton } from "@mantine/core";
+import { FiCheck, FiX, FiDownload, FiAlertCircle, FiShare2, FiExternalLink, FiCopy } from "react-icons/fi";
 
 // Detect if running in a WebView (Zalo, Facebook, Messenger, etc.)
 function detectWebView() {
@@ -25,6 +25,7 @@ function detectWebView() {
     return {
         isInAppBrowser: isZalo || isFacebookApp || isMessenger || isInstagram || isLine ||
             isTelegram || isSnapchat || isTwitter || isLinkedIn || isWeChat || isViber || isWebView,
+        isZalo,
         appName: isZalo ? 'Zalo' :
             isFacebookApp ? 'Facebook' :
                 isMessenger ? 'Messenger' :
@@ -37,68 +38,99 @@ function detectWebView() {
 }
 
 export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
-    const [webViewInfo, setWebViewInfo] = useState({ isInAppBrowser: false, appName: '' });
-    const [showImage, setShowImage] = useState(false);
+    const [webViewInfo, setWebViewInfo] = useState({ isInAppBrowser: false, isZalo: false, appName: '' });
     const [canShare, setCanShare] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareError, setShareError] = useState(null);
 
     useEffect(() => {
         if (isOpen) {
-            setWebViewInfo(detectWebView());
+            const info = detectWebView();
+            setWebViewInfo(info);
             // Check if Web Share API is available
-            setCanShare(navigator.share && navigator.canShare);
+            setCanShare(!!(navigator.share));
+            setShareError(null);
         }
     }, [isOpen]);
 
-    // Handle share via Web Share API
+    // Handle share via Web Share API (PRIMARY METHOD for Zalo/in-app browsers)
     const handleShare = async () => {
         if (!imageUrl) return;
+
+        setIsSharing(true);
+        setShareError(null);
 
         try {
             // Convert blob URL to blob
             const response = await fetch(imageUrl);
             const blob = await response.blob();
-            const file = new File([blob], fileName || 'avatar_image.png', { type: blob.type });
+            const file = new File([blob], fileName || 'khung_anh_dai_dien.png', { type: 'image/png' });
 
+            // Check if can share files
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
                     title: 'Khung ảnh đại diện',
-                    text: 'Khung ảnh đại diện của tôi'
                 });
-            } else {
-                // Fallback: share URL or text
+            } else if (navigator.share) {
+                // Fallback: share without file
                 await navigator.share({
                     title: 'Khung ảnh đại diện',
                     text: 'Khung ảnh đại diện của tôi',
-                    url: imageUrl
                 });
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                console.error('Lỗi khi chia sẻ:', error);
+                console.error('Share error:', error);
+                setShareError('Không thể chia sẻ. Vui lòng thử cách khác.');
             }
+        } finally {
+            setIsSharing(false);
         }
     };
 
-    // Handle showing full image for long-press save
-    const handleShowImage = () => {
-        setShowImage(true);
+    // Download image by creating a temporary link (for desktop browsers)
+    const handleDownload = async () => {
+        if (!imageUrl) return;
+
+        try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName || 'khung_anh_dai_dien.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Cleanup
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        } catch (error) {
+            console.error('Download failed:', error);
+            // Fallback: open in new tab
+            window.open(imageUrl, '_blank');
+        }
+    };
+
+    // Open current page in external browser
+    const handleOpenInBrowser = () => {
+        // Copy current URL to clipboard and show instructions
+        navigator.clipboard?.writeText(window.location.href);
     };
 
     return (
         <Modal
             opened={isOpen}
-            onClose={() => {
-                setShowImage(false);
-                onClose();
-            }}
+            onClose={onClose}
             title={
-                <Group>
+                <Group gap="xs">
                     <FiCheck size={20} color="green" />
-                    Thành công
+                    <Text fw={600}>Thành công</Text>
                 </Group>
             }
-            size={showImage ? "lg" : "md"}
+            size="md"
             centered
             radius="xl"
             styles={{
@@ -107,188 +139,161 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                 },
                 header: {
                     borderRadius: '24px 24px 0 0',
-                },
-                body: {
-                    borderRadius: '0 0 24px 24px',
                 }
             }}
         >
-            <Stack spacing="md" style={{ paddingTop: '12px' }}>
-                {!showImage ? (
-                    <>
-                        <div style={{
+            <Stack gap="md" style={{ paddingTop: '8px' }}>
+                <Box style={{
+                    textAlign: 'center',
+                    fontSize: '1.1rem',
+                    fontWeight: '500',
+                }}>
+                    Ảnh đã được xử lý thành công!
+                </Box>
+
+                {/* Preview image */}
+                {imageUrl && (
+                    <Box
+                        style={{
                             textAlign: 'center',
-                            fontSize: '1.1rem',
-                            fontWeight: '500',
-                            marginTop: '12px'
-                        }}>
-                            Ảnh đã được xử lý thành công!
-                        </div>
+                            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                            padding: '1rem',
+                            borderRadius: '20px',
+                            border: '1px solid #e2e8f0',
+                        }}
+                    >
+                        <img
+                            src={imageUrl}
+                            alt="Ảnh đã tạo"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '200px',
+                                objectFit: 'contain',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                            }}
+                        />
+                    </Box>
+                )}
 
-                        {/* Warning for in-app browsers */}
-                        {webViewInfo.isInAppBrowser && (
-                            <Alert
-                                icon={<FiAlertCircle size={18} />}
-                                title="Hướng dẫn lưu ảnh"
-                                color="orange"
-                                radius="md"
-                            >
-                                <Text size="sm">
-                                    Bạn đang mở trong <strong>{webViewInfo.appName}</strong>.
-                                    Để lưu ảnh, vui lòng:
-                                </Text>
-                                <Text size="sm" mt="xs">
-                                    1. Nhấn nút <strong>"Xem ảnh đầy đủ"</strong> bên dưới
-                                </Text>
-                                <Text size="sm">
-                                    2. <strong>Giữ lâu</strong> trên ảnh và chọn <strong>"Lưu ảnh"</strong>
-                                </Text>
-                                <Text size="sm" mt="xs" c="dimmed">
-                                    Hoặc mở trong trình duyệt bằng dấu ⋮ → "Mở trong trình duyệt"
-                                </Text>
-                            </Alert>
-                        )}
-
-                        {/* Action buttons */}
-                        <Stack spacing="sm">
-                            {/* Show full image button for in-app browsers */}
-                            {webViewInfo.isInAppBrowser && imageUrl && (
-                                <Button
-                                    onClick={handleShowImage}
-                                    fullWidth
-                                    variant="gradient"
-                                    gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
-                                    leftSection={<FiDownload size={18} />}
-                                    size="md"
-                                    radius="xl"
-                                >
-                                    Xem ảnh đầy đủ để lưu
-                                </Button>
-                            )}
-
-                            {/* Share button if Web Share API is available */}
-                            {canShare && imageUrl && (
-                                <Button
-                                    onClick={handleShare}
-                                    fullWidth
-                                    variant="light"
-                                    color="blue"
-                                    leftSection={<FiShare2 size={18} />}
-                                    size="md"
-                                    radius="xl"
-                                >
-                                    Chia sẻ ảnh
-                                </Button>
-                            )}
-
-                            {/* Direct download link for normal browsers */}
-                            {imageUrl && !webViewInfo.isInAppBrowser && (
-                                <Anchor
-                                    href={imageUrl}
-                                    download={fileName}
-                                    style={{ width: '100%' }}
-                                >
-                                    <Button
-                                        fullWidth
-                                        variant="gradient"
-                                        gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
-                                        leftSection={<FiDownload size={18} />}
-                                        size="md"
-                                        radius="xl"
-                                    >
-                                        Tải ảnh xuống
-                                    </Button>
-                                </Anchor>
-                            )}
-
-                            {imageUrl && (
-                                <Text align="center" size="xs" color="dimmed">
-                                    <Anchor
-                                        href={imageUrl}
-                                        download={fileName}
-                                        target="_blank"
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px'
-                                        }}
-                                    >
-                                        Nếu không tự động tải về, ấn vào đây
-                                    </Anchor>
-                                </Text>
-                            )}
+                {/* In-app browser warning and instructions */}
+                {webViewInfo.isInAppBrowser && (
+                    <Alert
+                        icon={<FiAlertCircle size={18} />}
+                        title={`Đang mở trong ${webViewInfo.appName}`}
+                        color="blue"
+                        radius="lg"
+                    >
+                        <Stack gap="xs">
+                            <Text size="sm">
+                                Để lưu ảnh, hãy nhấn nút <strong>"Lưu/Chia sẻ ảnh"</strong> bên dưới.
+                            </Text>
+                            <Text size="sm">
+                                Trong menu hiện ra, chọn <strong>"Lưu ảnh"</strong> hoặc <strong>"Save to Photos"</strong>.
+                            </Text>
                         </Stack>
+                    </Alert>
+                )}
 
+                {/* Share error message */}
+                {shareError && (
+                    <Alert color="red" radius="lg">
+                        <Text size="sm">{shareError}</Text>
+                    </Alert>
+                )}
+
+                {/* Action buttons */}
+                <Stack gap="sm">
+                    {/* PRIMARY: Share button for in-app browsers (Web Share API) */}
+                    {canShare && imageUrl && webViewInfo.isInAppBrowser && (
                         <Button
-                            onClick={onClose}
+                            onClick={handleShare}
                             fullWidth
-                            variant="outline"
-                            color="gray"
-                            rightSection={<FiX size={20} />}
+                            variant="gradient"
+                            gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
+                            leftSection={<FiShare2 size={18} />}
+                            size="lg"
+                            radius="xl"
+                            loading={isSharing}
+                        >
+                            📱 Lưu/Chia sẻ ảnh
+                        </Button>
+                    )}
+
+                    {/* DESKTOP: Direct download button */}
+                    {imageUrl && !webViewInfo.isInAppBrowser && (
+                        <Button
+                            onClick={handleDownload}
+                            fullWidth
+                            variant="gradient"
+                            gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
+                            leftSection={<FiDownload size={18} />}
+                            size="lg"
                             radius="xl"
                         >
-                            Đóng
+                            Tải ảnh xuống
                         </Button>
-                    </>
-                ) : (
-                    <>
-                        {/* Full image view for long-press saving */}
-                        <Alert
-                            icon={<FiAlertCircle size={16} />}
+                    )}
+
+                    {/* Share for desktop */}
+                    {canShare && imageUrl && !webViewInfo.isInAppBrowser && (
+                        <Button
+                            onClick={handleShare}
+                            fullWidth
+                            variant="light"
                             color="blue"
-                            radius="md"
-                            mb="sm"
+                            leftSection={<FiShare2 size={18} />}
+                            size="md"
+                            radius="xl"
+                            loading={isSharing}
                         >
-                            <Text size="sm">
-                                <strong>Giữ lâu</strong> trên ảnh bên dưới và chọn <strong>"Lưu ảnh"</strong> để lưu vào thư viện
-                            </Text>
-                        </Alert>
+                            Chia sẻ ảnh
+                        </Button>
+                    )}
 
-                        <Box
-                            style={{
-                                textAlign: 'center',
-                                background: '#f5f5f5',
-                                padding: '1rem',
-                                borderRadius: '12px'
-                            }}
-                        >
-                            <Image
-                                src={imageUrl}
-                                alt="Ảnh đã tạo"
-                                radius="md"
-                                style={{
-                                    maxWidth: '100%',
-                                    maxHeight: '60vh',
-                                    objectFit: 'contain'
-                                }}
-                            />
-                        </Box>
-
-                        <Group grow mt="sm">
-                            <Button
-                                onClick={() => setShowImage(false)}
-                                variant="outline"
-                                color="gray"
-                                radius="xl"
-                            >
-                                Quay lại
-                            </Button>
-
-                            {canShare && (
+                    {/* Alternative: Open in external browser */}
+                    {webViewInfo.isInAppBrowser && (
+                        <CopyButton value={window.location.href}>
+                            {({ copied, copy }) => (
                                 <Button
-                                    onClick={handleShare}
-                                    variant="gradient"
-                                    gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
-                                    leftSection={<FiShare2 size={16} />}
+                                    onClick={copy}
+                                    fullWidth
+                                    variant="outline"
+                                    color={copied ? "green" : "gray"}
+                                    leftSection={copied ? <FiCheck size={18} /> : <FiCopy size={18} />}
+                                    size="md"
                                     radius="xl"
                                 >
-                                    Chia sẻ
+                                    {copied ? "Đã copy! Mở Chrome/Safari để dán" : "Copy link để mở bằng trình duyệt"}
                                 </Button>
                             )}
-                        </Group>
-                    </>
-                )}
+                        </CopyButton>
+                    )}
+
+                    {/* Fallback for in-app browsers without share API */}
+                    {!canShare && webViewInfo.isInAppBrowser && (
+                        <Alert
+                            icon={<FiExternalLink size={16} />}
+                            color="orange"
+                            radius="lg"
+                        >
+                            <Text size="sm">
+                                Nhấn dấu <strong>⋮</strong> (góc trên) → <strong>"Mở trong trình duyệt"</strong> để tải ảnh.
+                            </Text>
+                        </Alert>
+                    )}
+                </Stack>
+
+                <Button
+                    onClick={onClose}
+                    fullWidth
+                    variant="subtle"
+                    color="gray"
+                    rightSection={<FiX size={18} />}
+                    radius="xl"
+                >
+                    Đóng
+                </Button>
             </Stack>
         </Modal>
     );
