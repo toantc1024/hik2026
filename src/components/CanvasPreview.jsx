@@ -1,5 +1,13 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Paper, Text, Slider, Group, Stack } from "@mantine/core";
+import { FiZoomIn, FiZoomOut } from "react-icons/fi";
+
+// Default/initial image settings - exported for reset functionality
+const DEFAULT_IMAGE_SETTINGS = {
+    x: 275,  // Top left X position
+    y: 205,  // Top left Y position  
+    size: 1444  // Default size (100%)
+};
 
 export default function CanvasPreview({
     drawFrame,
@@ -17,6 +25,17 @@ export default function CanvasPreview({
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [initialImagePos, setInitialImagePos] = useState({ x: 0, y: 0 });
+
+    // Pinch-to-zoom state
+    const [isPinching, setIsPinching] = useState(false);
+    const [initialPinchDistance, setInitialPinchDistance] = useState(0);
+    const [initialPinchSize, setInitialPinchSize] = useState(0);
+    const [initialPinchCenter, setInitialPinchCenter] = useState({ x: 0, y: 0 });
+
+    // Min/Max zoom constants (matching crop modal: 1x to 3x, displayed as 50% to 300%)
+    const MIN_PERCENTAGE = 50;
+    const MAX_PERCENTAGE = 300;
+    const BASE_SIZE = 1444;
 
     useEffect(() => {
         if (frameLoaded && canvasRef.current) {
@@ -60,17 +79,134 @@ export default function CanvasPreview({
         return distance <= radius;
     }, [imageSettings, frame]);
 
-    // Mouse/Touch event handlers
+    // Check if touch is on the canvas at all
+    const isTouchOnCanvas = useCallback((e) => {
+        if (!canvasRef.current) return false;
+        const rect = canvasRef.current.getBoundingClientRect();
+
+        // Check if any touch point is within canvas bounds
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                return true;
+            }
+        }
+        return false;
+    }, []);
+
+    // Calculate distance between two touch points
+    const getTouchDistance = useCallback((touches) => {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }, []);
+
+    // Get center point between two touches
+    const getTouchCenter = useCallback((touches) => {
+        return {
+            x: (touches[0].clientX + touches[1].clientX) / 2,
+            y: (touches[0].clientY + touches[1].clientY) / 2
+        };
+    }, []);
+
+    // Zoom from center - adjusts position to keep center fixed
+    const zoomFromCenter = useCallback((newSize, oldSize, currentX, currentY) => {
+        // Calculate current center
+        const currentCenterX = currentX + oldSize / 2;
+        const currentCenterY = currentY + oldSize / 2;
+
+        // Calculate new position to keep center fixed
+        const newX = currentCenterX - newSize / 2;
+        const newY = currentCenterY - newSize / 2;
+
+        return { x: newX, y: newY };
+    }, []);
+
+    // Handle touch start for both drag and pinch
+    const handleTouchStart = useCallback((e) => {
+        if (!uploadedImgLoaded || !canvasRef.current || !onImageSettingsChange) return;
+        e.preventDefault();
+
+        if (e.touches.length === 2) {
+            // Start pinch-to-zoom - allow from anywhere on canvas, not just on image
+            setIsPinching(true);
+            setIsDragging(false);
+            setInitialPinchDistance(getTouchDistance(e.touches));
+            setInitialPinchSize(imageSettings.size);
+            setInitialPinchCenter({ x: imageSettings.x, y: imageSettings.y });
+        } else if (e.touches.length === 1) {
+            // Start drag - only if touch is on the image
+            const mousePos = getMousePos(canvasRef.current, e);
+            if (isMouseOverImage(mousePos, canvasRef.current)) {
+                setIsDragging(true);
+                setDragStart(mousePos);
+                setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
+                canvasRef.current.style.cursor = 'grabbing';
+            }
+        }
+    }, [uploadedImgLoaded, getMousePos, isMouseOverImage, imageSettings, onImageSettingsChange, getTouchDistance]);
+
+    // Handle touch move for both drag and pinch
+    const handleTouchMove = useCallback((e) => {
+        if (!canvasRef.current || !onImageSettingsChange) return;
+        e.preventDefault();
+
+        if (isPinching && e.touches.length === 2) {
+            // Handle pinch-to-zoom with center origin - works from anywhere on canvas
+            const currentDistance = getTouchDistance(e.touches);
+            const scale = currentDistance / initialPinchDistance;
+            const newSize = Math.round(initialPinchSize * scale);
+
+            // Clamp size to valid range
+            const minSize = Math.round(BASE_SIZE * MIN_PERCENTAGE / 100);
+            const maxSize = Math.round(BASE_SIZE * MAX_PERCENTAGE / 100);
+            const clampedSize = Math.max(minSize, Math.min(maxSize, newSize));
+
+            // Zoom from center
+            const newPos = zoomFromCenter(clampedSize, initialPinchSize, initialPinchCenter.x, initialPinchCenter.y);
+
+            onImageSettingsChange({
+                ...imageSettings,
+                size: clampedSize,
+                x: newPos.x,
+                y: newPos.y
+            });
+        } else if (isDragging && e.touches.length === 1) {
+            // Handle drag
+            const mousePos = getMousePos(canvasRef.current, e);
+            const scale = canvasRef.current.width / frame.width;
+            const deltaX = (mousePos.x - dragStart.x) / scale;
+            const deltaY = (mousePos.y - dragStart.y) / scale;
+
+            const newX = Math.max(-imageSettings.size * 0.5,
+                Math.min(frame.width - imageSettings.size * 0.5,
+                    initialImagePos.x + deltaX));
+            const newY = Math.max(-imageSettings.size * 0.5,
+                Math.min(frame.height - imageSettings.size * 0.5,
+                    initialImagePos.y + deltaY));
+
+            onImageSettingsChange({
+                ...imageSettings,
+                x: newX,
+                y: newY
+            });
+        }
+    }, [isPinching, isDragging, initialPinchDistance, initialPinchSize, initialPinchCenter, getTouchDistance, getMousePos, dragStart, initialImagePos, imageSettings, frame, onImageSettingsChange, zoomFromCenter, MIN_PERCENTAGE, MAX_PERCENTAGE, BASE_SIZE]);
+
+    // Handle touch end
+    const handleTouchEnd = useCallback((e) => {
+        e.preventDefault();
+        setIsPinching(false);
+        setIsDragging(false);
+        if (canvasRef.current) {
+            canvasRef.current.style.cursor = 'default';
+        }
+    }, []);
+
+    // Mouse event handlers (for desktop)
     const handleMouseDown = useCallback((e) => {
         if (!uploadedImgLoaded || !canvasRef.current || !onImageSettingsChange) return;
-
-        // For touch events, only proceed if it's a single touch
-        if (e.touches && e.touches.length !== 1) return;
-
-        // Prevent default touch behavior
-        if (e.touches) {
-            e.preventDefault();
-        }
 
         const mousePos = getMousePos(canvasRef.current, e);
 
@@ -85,14 +221,6 @@ export default function CanvasPreview({
     const handleMouseMove = useCallback((e) => {
         if (!canvasRef.current) return;
 
-        // For touch events, only proceed if it's a single touch
-        if (e.touches && e.touches.length !== 1) return;
-
-        // Prevent default touch behavior
-        if (e.touches) {
-            e.preventDefault();
-        }
-
         const mousePos = getMousePos(canvasRef.current, e);
 
         if (isDragging && onImageSettingsChange) {
@@ -100,7 +228,6 @@ export default function CanvasPreview({
             const deltaX = (mousePos.x - dragStart.x) / scale;
             const deltaY = (mousePos.y - dragStart.y) / scale;
 
-            // Calculate new position with constraints to keep image within reasonable bounds
             const newX = Math.max(-imageSettings.size * 0.5,
                 Math.min(frame.width - imageSettings.size * 0.5,
                     initialImagePos.x + deltaX));
@@ -120,12 +247,7 @@ export default function CanvasPreview({
         }
     }, [isDragging, dragStart, initialImagePos, imageSettings, frame, getMousePos, isMouseOverImage, uploadedImgLoaded, onImageSettingsChange]);
 
-    const handleMouseUp = useCallback((e) => {
-        // Prevent default touch behavior
-        if (e.touches || e.changedTouches) {
-            e.preventDefault();
-        }
-
+    const handleMouseUp = useCallback(() => {
         setIsDragging(false);
         if (canvasRef.current) {
             canvasRef.current.style.cursor = 'default';
@@ -143,11 +265,10 @@ export default function CanvasPreview({
         canvas.addEventListener('mouseup', handleMouseUp);
         canvas.addEventListener('mouseleave', handleMouseUp);
 
-        // Touch events
-        canvas.addEventListener('touchstart', handleMouseDown, { passive: false });
-        canvas.addEventListener('touchmove', handleMouseMove, { passive: false });
-        canvas.addEventListener('touchend', handleMouseUp, { passive: false });
-        canvas.addEventListener('touchcancel', handleMouseUp, { passive: false });
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
         // Prevent context menu on long press
         canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -158,38 +279,44 @@ export default function CanvasPreview({
             canvas.removeEventListener('mouseup', handleMouseUp);
             canvas.removeEventListener('mouseleave', handleMouseUp);
 
-            canvas.removeEventListener('touchstart', handleMouseDown);
-            canvas.removeEventListener('touchmove', handleMouseMove);
-            canvas.removeEventListener('touchend', handleMouseUp);
-            canvas.removeEventListener('touchcancel', handleMouseUp);
+            canvas.removeEventListener('touchstart', handleTouchStart);
+            canvas.removeEventListener('touchmove', handleTouchMove);
+            canvas.removeEventListener('touchend', handleTouchEnd);
+            canvas.removeEventListener('touchcancel', handleTouchEnd);
             canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
         };
-    }, [handleMouseDown, handleMouseMove, handleMouseUp]);
+    }, [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-    // Handle zoom changes - now working with percentages
+    // Handle zoom changes with center origin
     const handleZoomChange = useCallback((percentage) => {
         if (onImageSettingsChange && imageSettings) {
-            // Convert percentage to actual pixel size
-            // 100% = 1444 (default), range from 50% (722px) to 100% (1444px)
-            const actualSize = Math.round((percentage / 100) * 1444);
+            const newSize = Math.round((percentage / 100) * BASE_SIZE);
+            const oldSize = imageSettings.size;
+
+            // Zoom from center
+            const newPos = zoomFromCenter(newSize, oldSize, imageSettings.x, imageSettings.y);
+
             onImageSettingsChange({
                 ...imageSettings,
-                size: actualSize
+                size: newSize,
+                x: newPos.x,
+                y: newPos.y
             });
         }
-    }, [onImageSettingsChange, imageSettings]);
+    }, [onImageSettingsChange, imageSettings, zoomFromCenter]);
 
     // Convert current size to percentage for display
     const getCurrentPercentage = useCallback(() => {
         if (!imageSettings?.size) return 100;
-        return Math.round((imageSettings.size / 1444) * 100);
+        return Math.round((imageSettings.size / BASE_SIZE) * 100);
     }, [imageSettings?.size]);
 
     return (
-        <Paper p="md" style={{
+        <Paper p="md" radius="xl" style={{
             width: "100%",
             overflow: "hidden",
-            touchAction: "pan-y" // Allow vertical scrolling but prevent zoom
+            touchAction: "pan-y",
+            borderRadius: '24px'
         }}>
             {title && (
                 <Text size="lg" weight={700} align="center" mb="md">
@@ -206,37 +333,44 @@ export default function CanvasPreview({
                         margin: "0 auto",
                         cursor: "default",
                         userSelect: "none",
-                        touchAction: "none" // Prevent default touch behaviors like zoom
+                        touchAction: "none",
+                        borderRadius: "16px"
                     }}
                 />
 
-                {/* Zoom Controls */}
+                {/* Zoom Controls - Simplified: only slider with icons */}
                 {uploadedImgLoaded && onImageSettingsChange && (
-                    <Group grow p={"xl"}>
-                        <div>
-                            <Text size="sm" mb={5} align="center" weight={500}>
-                                Phóng to: {getCurrentPercentage()}%
-                            </Text>
+                    <Stack spacing="md" px="md">
+                        <Group spacing="sm" align="center" style={{ width: '100%' }}>
+                            <FiZoomOut size={18} style={{ color: '#666', flexShrink: 0 }} />
                             <Slider
                                 value={getCurrentPercentage()}
                                 onChange={handleZoomChange}
-                                min={50}
-                                max={125}
+                                min={MIN_PERCENTAGE}
+                                max={MAX_PERCENTAGE}
                                 step={5}
                                 marks={[
                                     { value: 50, label: '50%' },
-                                    { value: 75, label: '75%' },
                                     { value: 100, label: '100%' },
-                                    { value: 125, label: '125%' }
+                                    { value: 200, label: '200%' },
+                                    { value: 300, label: '300%' }
                                 ]}
                                 size="md"
                                 color="blue"
                                 label={(value) => `${value}%`}
+                                style={{ flex: 1 }}
                             />
-                        </div>
-                    </Group>
+                            <FiZoomIn size={18} style={{ color: '#666', flexShrink: 0 }} />
+                        </Group>
+
+                        <Text size="xs" color="dimmed" align="center" mt="md" mb="sm">
+                            Kéo ảnh để di chuyển • Dùng 2 ngón để zoom
+                        </Text>
+                    </Stack>
                 )}
             </Stack>
         </Paper>
     );
 }
+
+export { DEFAULT_IMAGE_SETTINGS };

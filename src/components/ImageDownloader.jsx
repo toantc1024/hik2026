@@ -30,19 +30,28 @@ export default function ImageDownloader({
         } finally {
             setSaving(false);
         }
-    }; return (
-        <>            <Button
-            size="md"
-            radius="xl"
-            onClick={handleDownload}
-            fullWidth
-            color="blue"
-            loading={saving}
-            leftIcon={<FiDownload size={20} />}
-            disabled={disabled}
-        >
-            {saving ? "Đang xử lý..." : buttonLabel}
-        </Button>
+    };
+
+    return (
+        <>
+            <Button
+                size="md"
+                radius="xl"
+                onClick={handleDownload}
+                fullWidth
+                color="blue"
+                loading={saving}
+                leftSection={<FiDownload size={20} />}
+                disabled={disabled}
+                variant="gradient"
+                gradient={{ from: '#0066CC', to: '#4D00CC', deg: 135 }}
+                style={{
+                    boxShadow: disabled ? 'none' : '0 4px 12px rgba(0, 102, 204, 0.25)',
+                    borderRadius: '24px'
+                }}
+            >
+                {saving ? "Đang xử lý..." : buttonLabel}
+            </Button>
 
             <SuccessModal
                 isOpen={showSuccessModal}

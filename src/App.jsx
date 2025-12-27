@@ -16,13 +16,16 @@ import CanvasPreview from "./components/CanvasPreview";
 import ImageFrameRenderer from "./components/ImageFrameRenderer";
 import ImageDownloader from "./components/ImageDownloader";
 
-export default function ImageFrameOverlay() {  // State management
+
+export default function ImageFrameOverlay() {
+  // State management
   const [avatarFrame, setAvatarFrame] = useState(null);
   const [uploadedImg, setUploadedImg] = useState(null);
   const [uploadedImgLoaded, setUploadedImgLoaded] = useState(false);
   const [avatarFrameLoaded, setAvatarFrameLoaded] = useState(false);
   const [avatarCanvasSize, setAvatarCanvasSize] = useState({ width: 0, height: 0 });
   const [renderer, setRenderer] = useState(null);
+
 
   // Image customization settings - Updated for frame specifications
   const [squareImageSettings, setSquareImageSettings] = useState({
@@ -42,6 +45,7 @@ export default function ImageFrameOverlay() {  // State management
       setRenderer(new ImageFrameRenderer(null, avatarImg));
     };
   }, []);
+
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -83,6 +87,7 @@ export default function ImageFrameOverlay() {  // State management
       );
     }
   }, [renderer, avatarFrameLoaded, uploadedImg, uploadedImgLoaded, avatarCanvasSize, squareImageSettings]);
+
   // Handle avatar frame download  
   const handleAvatarDownload = async () => {
     if (!uploadedImgLoaded) {
@@ -109,6 +114,8 @@ export default function ImageFrameOverlay() {  // State management
         link.click();
         document.body.removeChild(link);
 
+
+
         return { success: true, url, fileName };
       }
       return { success: false };
@@ -116,20 +123,23 @@ export default function ImageFrameOverlay() {  // State management
       console.error("Error downloading avatar image:", error);
       return { success: false };
     }
-  };  // Helper function to get the reason why the button is disabled
+  };
+
+  // Helper function to get the reason why the button is disabled
   const getDownloadDisabledReason = () => {
     if (!uploadedImgLoaded) {
       return "Vui lòng tải ảnh lên trước khi lưu";
     }
     return null;
   };
+
   return (
     <div className="blue-theme-background" style={{
       background: 'linear-gradient(135deg, #E6F3FF 0%, #F0E6FF 50%, #CCE7FF 100%)',
-      padding: '2rem 0',
+      padding: '.5rem .5rem',
       minHeight: '60vh'
     }}>
-      <Container size="xl" py="xl" className="blue-theme-container">
+      <Container size="xl" px="md" py="xl" className="blue-theme-container">
         <Grid gutter="md">
           <Grid.Col sm={12} md={4}>
             <Stack spacing="lg">
@@ -152,7 +162,7 @@ export default function ImageFrameOverlay() {  // State management
             </Stack>
           </Grid.Col>
           <Grid.Col sm={12} md={8}>
-            <div>
+            <Stack spacing="md">
               <CanvasPreview
                 drawFrame={drawAvatarFrame}
                 frame={avatarFrame}
@@ -165,7 +175,9 @@ export default function ImageFrameOverlay() {  // State management
                 imageSettings={squareImageSettings}
                 onImageSettingsChange={setSquareImageSettings}
               />
-            </div>
+
+
+            </Stack>
           </Grid.Col>
         </Grid>
 
@@ -174,3 +186,4 @@ export default function ImageFrameOverlay() {  // State management
     </div>
   );
 }
+
