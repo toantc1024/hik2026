@@ -28,11 +28,11 @@ export default function ImageFrameOverlay() {
   const [renderer, setRenderer] = useState(null);
 
 
-  // Image customization settings - Updated for frame specifications
+  // Image customization settings - Updated for 3750x3750 frame specifications
   const [squareImageSettings, setSquareImageSettings] = useState({
-    x: 275,  // Top left X position as specified
-    y: 205,  // Top left Y position as specified  
-    size: 1444  // Circle size as specified
+    x: 510,   // Top left X position of the circular hole
+    y: 510,   // Top left Y position of the circular hole  
+    size: 2730  // Size of the circular area (diameter)
   });
 
   // Load frame images
@@ -70,10 +70,27 @@ export default function ImageFrameOverlay() {
     return () => window.removeEventListener("resize", handleResize);
   }, [avatarFrame]);
 
+  // Frame area constants (where the avatar image should fit)
+  // Based on 3750x3750 frame with circular hole at center
+  const FRAME_AREA = {
+    x: 510,      // Top left X of circular hole
+    y: 510,      // Top left Y of circular hole
+    size: 2730   // Diameter of the circular area
+  };
+
   // Handle image loading from ImageUploader component
+  // Reset image position to center and fit the frame area
   const handleImageLoaded = useCallback((image) => {
     setUploadedImg(image);
     setUploadedImgLoaded(true);
+
+    // Reset to default frame area position - image will be centered and fit
+    // The drawSquareImage function handles scaling and centering within the size
+    setSquareImageSettings({
+      x: FRAME_AREA.x,
+      y: FRAME_AREA.y,
+      size: FRAME_AREA.size
+    });
   }, []);
 
   // Draw avatar frame on canvas

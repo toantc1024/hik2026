@@ -6,7 +6,10 @@ import { FiAlertTriangle, FiExternalLink } from "react-icons/fi";
 function detectWebView() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
 
-    const isZalo = /Zalo/i.test(ua);
+    // Zalo detection - includes various Zalo identifiers
+    // On iOS, Zalo may use different patterns like ZaloTheme, ZaloApp, zlp (ZaloPay)
+    const isZalo = /Zalo|ZaloTheme|ZaloApp|zlp/i.test(ua);
+
     const isFacebookApp = /FBAN|FBAV|FB_IAB/i.test(ua);
     const isMessenger = /Messenger/i.test(ua);
     const isInstagram = /Instagram/i.test(ua);
@@ -15,16 +18,28 @@ function detectWebView() {
     const isViber = /Viber/i.test(ua);
     const isWebView = /(wv|WebView)/i.test(ua);
 
-    const isInAppBrowser = isZalo || isFacebookApp || isMessenger || isInstagram || isLine || isWeChat || isViber || isWebView;
+    // iOS-specific: Detect if running in a standalone WebView (not Safari)
+    // iOS WebViews don't have "Safari" in user agent but have "Mobile" and "AppleWebKit"
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const hasSafari = /Safari/i.test(ua);
+    const hasAppleWebKit = /AppleWebKit/i.test(ua);
+    const isIOSWebView = isIOS && hasAppleWebKit && !hasSafari && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
 
-    const appName = isZalo ? 'Zalo' :
+    // Check for Zalo SDK if available (most reliable for Zalo apps)
+    const hasZaloSDK = typeof window !== 'undefined' && (window.zlpSdk || window.ZaloJSInterface);
+
+    const isInAppBrowser = isZalo || isFacebookApp || isMessenger || isInstagram ||
+        isLine || isWeChat || isViber || isWebView || isIOSWebView || hasZaloSDK;
+
+    const appName = isZalo || hasZaloSDK ? 'Zalo' :
         isFacebookApp ? 'Facebook' :
             isMessenger ? 'Messenger' :
                 isInstagram ? 'Instagram' :
                     isLine ? 'Line' :
                         isWeChat ? 'WeChat' :
                             isViber ? 'Viber' :
-                                'ứng dụng này';
+                                isIOSWebView ? 'trình duyệt trong ứng dụng' :
+                                    'ứng dụng này';
 
     return { isInAppBrowser, appName };
 }
@@ -36,6 +51,10 @@ export default function InAppBrowserAlert() {
     useEffect(() => {
         const info = detectWebView();
         setWebViewInfo(info);
+
+        // Debug: Log user agent for diagnosis (can be removed in production)
+        console.log('[InAppBrowserAlert] User Agent:', navigator.userAgent);
+        console.log('[InAppBrowserAlert] Detection result:', info);
 
         // Show alert if in-app browser detected
         if (info.isInAppBrowser) {

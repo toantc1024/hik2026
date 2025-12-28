@@ -3,10 +3,11 @@ import { Paper, Text, Slider, Group, Stack } from "@mantine/core";
 import { FiZoomIn, FiZoomOut } from "react-icons/fi";
 
 // Default/initial image settings - exported for reset functionality
+// Based on 3750x3750 frame with circular hole at center
 const DEFAULT_IMAGE_SETTINGS = {
-    x: 275,  // Top left X position
-    y: 205,  // Top left Y position  
-    size: 1444  // Default size (100%)
+    x: 510,   // Top left X position of circular hole
+    y: 510,   // Top left Y position of circular hole  
+    size: 2730  // Default size (diameter of circular area)
 };
 
 export default function CanvasPreview({
@@ -35,7 +36,7 @@ export default function CanvasPreview({
     // Min/Max zoom constants (matching crop modal: 1x to 3x, displayed as 50% to 300%)
     const MIN_PERCENTAGE = 50;
     const MAX_PERCENTAGE = 300;
-    const BASE_SIZE = 1444;
+    const BASE_SIZE = 2730; // Matches the circular area diameter of 3750x3750 frame
 
     useEffect(() => {
         if (frameLoaded && canvasRef.current) {
