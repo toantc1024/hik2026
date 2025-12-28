@@ -1,6 +1,6 @@
 .footer {
-  padding-top: calc(var(--mantine-spacing-xl) * 1);
-  padding-bottom: calc(var(--mantine-spacing-xl) * 1);
+  padding-top: var(--mantine-spacing-sm);
+  padding-bottom: var(--mantine-spacing-sm);
 }
 
 .logo {

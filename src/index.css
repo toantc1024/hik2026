@@ -19,3 +19,14 @@ canvas {
 .mantine-Button-root {
   font-weight: 600;
 }
+
+/* Avatar canvas responsive sizing */
+.avatar-canvas {
+  height: 40vh;
+}
+
+@media (min-width: 768px) {
+  .avatar-canvas {
+    height: 55vh;
+  }
+}

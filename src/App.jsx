@@ -5,7 +5,9 @@ import {
   Stack,
   Grid,
   Tooltip,
+  Button,
 } from "@mantine/core";
+import { FiExternalLink } from "react-icons/fi";
 import AVATAR_FRAME from "./assets/avatar.png";
 import "./App.css";
 import "./fonts.css";
@@ -16,6 +18,7 @@ import CanvasPreview from "./components/CanvasPreview";
 import ImageFrameRenderer from "./components/ImageFrameRenderer";
 import ImageDownloader from "./components/ImageDownloader";
 import InAppBrowserAlert from "./components/InAppBrowserAlert";
+import ConfirmLinkModal from "./components/ConfirmLinkModal";
 
 
 export default function ImageFrameOverlay() {
@@ -26,6 +29,9 @@ export default function ImageFrameOverlay() {
   const [avatarFrameLoaded, setAvatarFrameLoaded] = useState(false);
   const [avatarCanvasSize, setAvatarCanvasSize] = useState({ width: 0, height: 0 });
   const [renderer, setRenderer] = useState(null);
+
+  // Modal state for external link confirmation
+  const [confirmModalOpened, setConfirmModalOpened] = useState(false);
 
 
   // Image customization settings - Updated for 3750x3750 frame specifications
@@ -180,6 +186,17 @@ export default function ImageFrameOverlay() {
                   />
                 </div>
               </Tooltip>
+
+              <Button
+                fullWidth
+                size="md"
+                radius="xl"
+                variant="light"
+                leftSection={<FiExternalLink size={18} />}
+                onClick={() => setConfirmModalOpened(true)}
+              >
+                Bộ nhận diện HCMUTE
+              </Button>
             </Stack>
           </Grid.Col>
           <Grid.Col sm={12} md={8}>
@@ -203,6 +220,14 @@ export default function ImageFrameOverlay() {
         </Grid>
 
         {/* Loading overlay removed as requested */}
+
+        {/* Confirm Link Modal */}
+        <ConfirmLinkModal
+          opened={confirmModalOpened}
+          onClose={() => setConfirmModalOpened(false)}
+          url="https://link.hcmute.edu.vn/BonhandienHCMUTE"
+          title="Bộ nhận diện HCMUTE"
+        />
       </Container>
     </div>
   );

@@ -327,9 +327,9 @@ export default function CanvasPreview({
             <Stack spacing="md">
                 <canvas
                     ref={canvasRef}
+                    className="avatar-canvas"
                     style={{
                         maxWidth: "100%",
-                        height: "40vh",
                         display: "block",
                         margin: "0 auto",
                         cursor: "default",
