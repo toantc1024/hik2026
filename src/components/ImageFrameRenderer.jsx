@@ -1,4 +1,8 @@
 // This component contains all the canvas drawing logic
+
+// Preview canvas size for smooth rendering (smaller than original to avoid aliasing)
+const PREVIEW_SIZE = 800;
+
 export default class ImageFrameRenderer {
     constructor(frame, avatarFrame = null) {
         this.frame = frame;
@@ -145,15 +149,24 @@ export default class ImageFrameRenderer {
 
         if (!ctx || !this.avatarFrame) return;
 
-        // Set canvas dimensions
-        canvas.width = canvasSize.width;
-        canvas.height = canvasSize.height;
+        // Use a fixed preview size to avoid aliasing when displaying high-res images
+        // This makes the preview smoother while export still uses original resolution
+        const previewDimension = PREVIEW_SIZE;
+        const aspectRatio = this.avatarFrame.height / this.avatarFrame.width;
 
-        const scale = canvasSize.width / this.avatarFrame.width;
+        // Set canvas to optimal preview size (smaller than original for smooth rendering)
+        canvas.width = previewDimension;
+        canvas.height = previewDimension * aspectRatio;
+
+        const scale = canvas.width / this.avatarFrame.width;
+
+        // Enable high-quality image smoothing for anti-aliasing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw square image
+        // Draw square image with smoothing
         if (uploadedImgLoaded) {
             const imageX = imageSettings.x * scale;
             const imageY = imageSettings.y * scale;
