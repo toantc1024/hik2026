@@ -8,46 +8,46 @@ import { MantineProvider, createTheme } from "@mantine/core";
 import FooterContent from "./components/Layout/FooterContent.jsx";
 import HeaderContent from "./components/Layout/HeaderContent.jsx";
 
-// Create a custom theme synchronized with avatar frame colors
+// Create a custom theme synchronized with the avatar frame colors
 const hcmuteTheme = createTheme({
   primaryColor: 'blue',
   primaryShade: 6,
   colors: {
     blue: [
-      '#E6F3FF',
-      '#CCE7FF',
-      '#99CFFF',
-      '#66B7FF',
-      '#339FFF',
-      '#0087FF',
-      '#0066CC', // Primary shade - HCMUTE blue
-      '#004D99',
-      '#003366',
-      '#001A33',
-    ],
-    purple: [
-      '#F0E6FF',
-      '#E1CCFF',
-      '#C299FF',
-      '#A366FF',
-      '#8433FF',
-      '#6500FF',
-      '#4D00CC', // Deep purple
-      '#3300A3',
-      '#1A0066',
-      '#0D0033',
+      '#F0F6FF',
+      '#DCEBFF',
+      '#B9D6FF',
+      '#8CC0FF',
+      '#5FA8FF',
+      '#338CFF',
+      '#0F4FE6', // Primary electric blue from avatar frame
+      '#0B3FB8',
+      '#072E8A',
+      '#041D5C',
     ],
     red: [
-      '#FFF0F0',
-      '#FFD6D6',
+      '#FFF1F1',
+      '#FFD8D8',
       '#FFB3B3',
-      '#FF8080',
-      '#FF4D4D',
-      '#FF1A1A',
-      '#E60000', // Bright red matching avatar ribbon
-      '#CC0000',
-      '#990000',
-      '#660000',
+      '#FF8585',
+      '#FF5B5B',
+      '#FF3434',
+      '#E11D2E', // Avatar ribbon red
+      '#BF1326',
+      '#8F0F1C',
+      '#5E0A12',
+    ],
+    yellow: [
+      '#FFF9E6',
+      '#FFF0C2',
+      '#FFE38F',
+      '#FFD65C',
+      '#FFCA2B',
+      '#F5B800',
+      '#D99E00', // Warm gold accent from avatar details
+      '#B57F00',
+      '#805A00',
+      '#4D3500',
     ],
   },
   defaultGradient: {

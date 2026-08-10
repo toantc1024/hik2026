@@ -154,7 +154,7 @@ export default function ImageFrameOverlay() {
 
   return (
     <div className="blue-theme-background" style={{
-      background: 'linear-gradient(135deg, #F8FBFF 0%, #F6F2FF 50%, #F1F7FF 100%)',
+      background: 'linear-gradient(135deg, #F0F6FF 0%, #FFF6F7 50%, #EEF5FF 100%)',
       padding: '.5rem .5rem',
       minHeight: '60vh'
     }}>

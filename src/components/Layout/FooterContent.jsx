@@ -52,7 +52,7 @@ export default function FooterLinks() {
         textAlign: 'center',
         width: '100%'
       }}>
-        © 2025 HCM-UTE
+        © 2026 HCM-UTE
       </Text>
 
     </footer>
