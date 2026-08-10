@@ -1,24 +1,21 @@
 // filepath: c:\Users\Deno\hvm\thanhdoan.pnt\src\App.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Container,
   Stack,
   Grid,
   Tooltip,
-  Button,
 } from "@mantine/core";
-import { FiExternalLink } from "react-icons/fi";
 import AVATAR_FRAME from "./assets/avatar.png";
 import "./App.css";
 import "./fonts.css";
 
 // Import components
-import ImageUploader from "./components/ImageUploader";
+import AvatarUploader from "./components/AvatarUploader";
 import CanvasPreview from "./components/CanvasPreview";
 import ImageFrameRenderer from "./components/ImageFrameRenderer";
 import ImageDownloader from "./components/ImageDownloader";
 import InAppBrowserAlert from "./components/InAppBrowserAlert";
-import ConfirmLinkModal from "./components/ConfirmLinkModal";
 
 
 export default function ImageFrameOverlay() {
@@ -29,10 +26,6 @@ export default function ImageFrameOverlay() {
   const [avatarFrameLoaded, setAvatarFrameLoaded] = useState(false);
   const [avatarCanvasSize, setAvatarCanvasSize] = useState({ width: 0, height: 0 });
   const [renderer, setRenderer] = useState(null);
-
-  // Modal state for external link confirmation
-  const [confirmModalOpened, setConfirmModalOpened] = useState(false);
-
 
   // Image customization settings - Updated for 3750x3750 frame specifications
   const [squareImageSettings, setSquareImageSettings] = useState({
@@ -157,9 +150,11 @@ export default function ImageFrameOverlay() {
     return null;
   };
 
+  const avatarInputRef = useRef(null);
+
   return (
     <div className="blue-theme-background" style={{
-      background: 'linear-gradient(135deg, #E6F3FF 0%, #F0E6FF 50%, #CCE7FF 100%)',
+      background: 'linear-gradient(135deg, #F8FBFF 0%, #F6F2FF 50%, #F1F7FF 100%)',
       padding: '.5rem .5rem',
       minHeight: '60vh'
     }}>
@@ -170,7 +165,7 @@ export default function ImageFrameOverlay() {
         <Grid gutter="md">
           <Grid.Col sm={12} md={4}>
             <Stack spacing="lg">
-              <ImageUploader onImageLoaded={handleImageLoaded} />
+              <AvatarUploader inputRef={avatarInputRef} onImageLoaded={handleImageLoaded} />
 
               <Tooltip
                 label={getDownloadDisabledReason()}
@@ -186,17 +181,6 @@ export default function ImageFrameOverlay() {
                   />
                 </div>
               </Tooltip>
-
-              <Button
-                fullWidth
-                size="md"
-                radius="xl"
-                variant="light"
-                leftSection={<FiExternalLink size={18} />}
-                onClick={() => setConfirmModalOpened(true)}
-              >
-                Bộ nhận diện HCMUTE
-              </Button>
             </Stack>
           </Grid.Col>
           <Grid.Col sm={12} md={8}>
@@ -212,22 +196,13 @@ export default function ImageFrameOverlay() {
                 title=""
                 imageSettings={squareImageSettings}
                 onImageSettingsChange={setSquareImageSettings}
+                onClick={() => avatarInputRef.current?.click()}
               />
 
 
             </Stack>
           </Grid.Col>
         </Grid>
-
-        {/* Loading overlay removed as requested */}
-
-        {/* Confirm Link Modal */}
-        <ConfirmLinkModal
-          opened={confirmModalOpened}
-          onClose={() => setConfirmModalOpened(false)}
-          url="https://link.hcmute.edu.vn/BonhandienHCMUTE"
-          title="Bộ nhận diện HCMUTE"
-        />
       </Container>
     </div>
   );

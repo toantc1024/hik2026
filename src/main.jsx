@@ -8,7 +8,7 @@ import { MantineProvider, createTheme } from "@mantine/core";
 import FooterContent from "./components/Layout/FooterContent.jsx";
 import HeaderContent from "./components/Layout/HeaderContent.jsx";
 
-// Create a custom theme based on HCMUTE brand colors
+// Create a custom theme synchronized with avatar frame colors
 const hcmuteTheme = createTheme({
   primaryColor: 'blue',
   primaryShade: 6,
@@ -37,22 +37,22 @@ const hcmuteTheme = createTheme({
       '#1A0066',
       '#0D0033',
     ],
-    magenta: [
-      '#FFE6F7',
-      '#FFCCEF',
-      '#FF99DF',
-      '#FF66CF',
-      '#FF33BF',
-      '#FF00AF',
-      '#E6009E', // Bright magenta for accents
-      '#CC008D',
-      '#B3007C',
-      '#99006B',
+    red: [
+      '#FFF0F0',
+      '#FFD6D6',
+      '#FFB3B3',
+      '#FF8080',
+      '#FF4D4D',
+      '#FF1A1A',
+      '#E60000', // Bright red matching avatar ribbon
+      '#CC0000',
+      '#990000',
+      '#660000',
     ],
   },
   defaultGradient: {
     from: 'blue.6',
-    to: 'purple.6',
+    to: 'red.6',
     deg: 135,
   },
   components: {
@@ -60,7 +60,7 @@ const hcmuteTheme = createTheme({
       defaultProps: {
         color: 'blue',
         variant: 'gradient',
-        gradient: { from: 'blue.6', to: 'purple.6', deg: 135 },
+        gradient: { from: 'blue.6', to: 'red.6', deg: 135 },
       },
     },
     SegmentedControl: {

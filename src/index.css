@@ -2,6 +2,8 @@ body {
   font-family: Inter, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "salt";
   font-variation-settings: "cv02", "cv03", "cv04", "cv11", "salt";
+  background-color: #ffffff;
+  color: #333333;
 }
 
 body {

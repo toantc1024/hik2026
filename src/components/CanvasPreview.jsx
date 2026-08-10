@@ -6,7 +6,7 @@ import { FiZoomIn, FiZoomOut } from "react-icons/fi";
 // Based on 3750x3750 frame with circular hole at center
 const DEFAULT_IMAGE_SETTINGS = {
     x: 510,   // Top left X position of circular hole
-    y: 510,   // Top left Y position of circular hole  
+    y: 510,   // Top left Y position of circular hole
     size: 2730  // Default size (diameter of circular area)
 };
 
@@ -20,7 +20,8 @@ export default function CanvasPreview({
     canvasSize,
     title,
     imageSettings,
-    onImageSettingsChange
+    onImageSettingsChange,
+    onClick // Added onClick prop
 }) {
     const canvasRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -37,6 +38,10 @@ export default function CanvasPreview({
     const MIN_PERCENTAGE = 50;
     const MAX_PERCENTAGE = 300;
     const BASE_SIZE = 2730; // Matches the circular area diameter of 3750x3750 frame
+
+    // Track if a drag movement occurred
+    const [hasDragged, setHasDragged] = useState(false);
+    const [touchedImage, setTouchedImage] = useState(false);
 
     useEffect(() => {
         if (frameLoaded && canvasRef.current) {
@@ -133,6 +138,8 @@ export default function CanvasPreview({
             // Start pinch-to-zoom - allow from anywhere on canvas, not just on image
             setIsPinching(true);
             setIsDragging(false);
+            setHasDragged(false);
+            setTouchedImage(false);
             setInitialPinchDistance(getTouchDistance(e.touches));
             setInitialPinchSize(imageSettings.size);
             setInitialPinchCenter({ x: imageSettings.x, y: imageSettings.y });
@@ -141,9 +148,13 @@ export default function CanvasPreview({
             const mousePos = getMousePos(canvasRef.current, e);
             if (isMouseOverImage(mousePos, canvasRef.current)) {
                 setIsDragging(true);
+                setHasDragged(false);
+                setTouchedImage(true);
                 setDragStart(mousePos);
                 setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
                 canvasRef.current.style.cursor = 'grabbing';
+            } else {
+                setTouchedImage(false);
             }
         }
     }, [uploadedImgLoaded, getMousePos, isMouseOverImage, imageSettings, onImageSettingsChange, getTouchDistance]);
@@ -167,6 +178,7 @@ export default function CanvasPreview({
             // Zoom from center
             const newPos = zoomFromCenter(clampedSize, initialPinchSize, initialPinchCenter.x, initialPinchCenter.y);
 
+            setHasDragged(true); // Mark as dragged to avoid click
             onImageSettingsChange({
                 ...imageSettings,
                 size: clampedSize,
@@ -187,6 +199,9 @@ export default function CanvasPreview({
                 Math.min(frame.height - imageSettings.size * 0.5,
                     initialImagePos.y + deltaY));
 
+            if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+                setHasDragged(true);
+            }
             onImageSettingsChange({
                 ...imageSettings,
                 x: newX,
@@ -199,11 +214,20 @@ export default function CanvasPreview({
     const handleTouchEnd = useCallback((e) => {
         e.preventDefault();
         setIsPinching(false);
+        const wasDragging = isDragging;
         setIsDragging(false);
+
+        // If not dragging and not pinching and touched an image, treat as click
+        if (!hasDragged && !wasDragging && !isPinching && touchedImage && onClick) {
+            onClick();
+        }
+        setHasDragged(false);
+        setTouchedImage(false);
+
         if (canvasRef.current) {
             canvasRef.current.style.cursor = 'default';
         }
-    }, []);
+    }, [isDragging, hasDragged, isPinching, touchedImage, onClick]);
 
     // Mouse event handlers (for desktop)
     const handleMouseDown = useCallback((e) => {
@@ -213,6 +237,7 @@ export default function CanvasPreview({
 
         if (isMouseOverImage(mousePos, canvasRef.current)) {
             setIsDragging(true);
+            setHasDragged(false);
             setDragStart(mousePos);
             setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
             canvasRef.current.style.cursor = 'grabbing';
@@ -236,6 +261,9 @@ export default function CanvasPreview({
                 Math.min(frame.height - imageSettings.size * 0.5,
                     initialImagePos.y + deltaY));
 
+            if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+                setHasDragged(true);
+            }
             onImageSettingsChange({
                 ...imageSettings,
                 x: newX,
@@ -249,11 +277,19 @@ export default function CanvasPreview({
     }, [isDragging, dragStart, initialImagePos, imageSettings, frame, getMousePos, isMouseOverImage, uploadedImgLoaded, onImageSettingsChange]);
 
     const handleMouseUp = useCallback(() => {
+        const wasDragging = isDragging;
         setIsDragging(false);
+
+        // If not dragging, treat as click (only on desktop)
+        if (!hasDragged && !wasDragging && onClick) {
+            onClick();
+        }
+        setHasDragged(false);
+
         if (canvasRef.current) {
             canvasRef.current.style.cursor = 'default';
         }
-    }, []);
+    }, [isDragging, hasDragged, onClick]);
 
     // Add event listeners
     useEffect(() => {

@@ -1,23 +1,23 @@
-/* HCMUTE Blue theme styles */
+/* HCMUTE Blue theme styles synchronized with avatar frame (light theme) */
 :root {
-  --blue-light: #E6F3FF;
+  --blue-light: #EAF4FF;
   --blue-medium: #0066CC;
   --blue-dark: #004D99;
-  --purple-medium: #4D00CC;
-  --purple-dark: #3300A3;
+  --red-medium: #E60000;
+  --red-dark: #CC0000;
   --magenta-accent: #E6009E;
-  --hcmute-gradient: linear-gradient(135deg, #0066CC, #4D00CC);
+  --hcmute-gradient: linear-gradient(135deg, #0066CC, #E60000);
 }
 
 .mantine-Paper-root {
-  background-color: var(--blue-light);
-  border: 1px solid rgba(0, 102, 204, 0.2);
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 102, 204, 0.15);
 }
 
 .mantine-Container-root {
-  background: #fff;
+  background: #ffffff;
   border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.08);
 }
 
 .mantine-Title-root {
