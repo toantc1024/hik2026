@@ -91,7 +91,7 @@ export default class ImageFrameRenderer {
         ctx.restore();
     }
 
-    drawFrameOnCanvas(canvas, uploadedImg, uploadedImgLoaded, formData, canvasSize, imageSettings = { x: 510, y: 510, size: 2730 }) {
+    drawFrameOnCanvas(canvas, uploadedImg, uploadedImgLoaded, formData, canvasSize, imageSettings = { x: 0, y: 0, size: 1200 }) {
         const ctx = canvas.getContext("2d", { alpha: true });
 
         if (!ctx) return;
@@ -144,7 +144,7 @@ export default class ImageFrameRenderer {
         }
     }
 
-    drawAvatarFrameOnCanvas(canvas, uploadedImg, uploadedImgLoaded, canvasSize, imageSettings = { x: 510, y: 510, size: 2730 }) {
+    drawAvatarFrameOnCanvas(canvas, uploadedImg, uploadedImgLoaded, canvasSize, imageSettings = { x: 0, y: 0, size: 1200 }) {
         const ctx = canvas.getContext("2d", { alpha: true });
 
         if (!ctx || !this.avatarFrame) return;
@@ -182,7 +182,7 @@ export default class ImageFrameRenderer {
     }
 
     // Create a high-resolution version of the image for download
-    createHighResolutionImage(uploadedImg, uploadedImgLoaded, formData, imageSettings = { x: 510, y: 510, size: 2730 }) {
+    createHighResolutionImage(uploadedImg, uploadedImgLoaded, formData, imageSettings = { x: 0, y: 0, size: 1200 }) {
         return new Promise((resolve, reject) => {
             try {
                 const exportCanvas = document.createElement("canvas");
@@ -239,7 +239,7 @@ export default class ImageFrameRenderer {
     }
 
     // Create a high-resolution version of the avatar image for download
-    createHighResolutionAvatarImage(uploadedImg, uploadedImgLoaded, imageSettings = { x: 510, y: 510, size: 2730 }) {
+    createHighResolutionAvatarImage(uploadedImg, uploadedImgLoaded, imageSettings = { x: 0, y: 0, size: 1200 }) {
         return new Promise((resolve, reject) => {
             try {
                 const exportCanvas = document.createElement("canvas");

@@ -3,11 +3,11 @@ import { Paper, Text, Slider, Group, Stack } from "@mantine/core";
 import { FiZoomIn, FiZoomOut } from "react-icons/fi";
 
 // Default/initial image settings - exported for reset functionality
-// Based on 3750x3750 frame with circular hole at center
+// Based on 1200x1200 avatar frame with circular/square hole at center
 const DEFAULT_IMAGE_SETTINGS = {
-    x: 510,   // Top left X position of circular hole
-    y: 510,   // Top left Y position of circular hole
-    size: 2730  // Default size (diameter of circular area)
+    x: 0,   // Top left X position
+    y: 0,   // Top left Y position
+    size: 1200  // Default size matching 1200x1200 frame
 };
 
 export default function CanvasPreview({
@@ -37,7 +37,7 @@ export default function CanvasPreview({
     // Min/Max zoom constants (matching crop modal: 1x to 3x, displayed as 50% to 300%)
     const MIN_PERCENTAGE = 50;
     const MAX_PERCENTAGE = 300;
-    const BASE_SIZE = 2730; // Matches the circular area diameter of 3750x3750 frame
+    const BASE_SIZE = 1200; // Matches avatar frame 1200x1200 size
 
     // Track if a drag movement occurred
     const [hasDragged, setHasDragged] = useState(false);
@@ -55,9 +55,16 @@ export default function CanvasPreview({
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
-        // Handle touch events
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        }
 
         return {
             x: (clientX - rect.left) * scaleX,
@@ -65,41 +72,11 @@ export default function CanvasPreview({
         };
     }, []);
 
-    // Check if mouse is over the image area
+    // Check if mouse/touch is over the canvas area
     const isMouseOverImage = useCallback((mousePos, canvas) => {
-        if (!imageSettings || !frame) return false;
-
-        const scale = canvas.width / frame.width;
-        const imageX = imageSettings.x * scale;
-        const imageY = imageSettings.y * scale;
-        const imageSize = imageSettings.size * scale;
-
-        // Check if mouse is within the circular image bounds
-        const centerX = imageX + imageSize / 2;
-        const centerY = imageY + imageSize / 2;
-        const radius = imageSize / 2;
-        const distance = Math.sqrt(
-            Math.pow(mousePos.x - centerX, 2) + Math.pow(mousePos.y - centerY, 2)
-        );
-
-        return distance <= radius;
-    }, [imageSettings, frame]);
-
-    // Check if touch is on the canvas at all
-    const isTouchOnCanvas = useCallback((e) => {
-        if (!canvasRef.current) return false;
-        const rect = canvasRef.current.getBoundingClientRect();
-
-        // Check if any touch point is within canvas bounds
-        for (let i = 0; i < e.touches.length; i++) {
-            const touch = e.touches[i];
-            if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-                return true;
-            }
-        }
-        return false;
-    }, []);
+        if (!imageSettings) return false;
+        return true;
+    }, [imageSettings]);
 
     // Calculate distance between two touch points
     const getTouchDistance = useCallback((touches) => {
@@ -131,11 +108,19 @@ export default function CanvasPreview({
 
     // Handle touch start for both drag and pinch
     const handleTouchStart = useCallback((e) => {
-        if (!uploadedImgLoaded || !canvasRef.current || !onImageSettingsChange) return;
+        if (!canvasRef.current) return;
+
+        // If no image loaded, allow default tap behavior to trigger file selection
+        if (!uploadedImgLoaded) {
+            return;
+        }
+
+        // Image is loaded: prevent native scroll/click synthesis and enable photo dragging/pinching
         e.preventDefault();
+        if (!onImageSettingsChange) return;
 
         if (e.touches.length === 2) {
-            // Start pinch-to-zoom - allow from anywhere on canvas, not just on image
+            // Start pinch-to-zoom - allow from anywhere on canvas
             setIsPinching(true);
             setIsDragging(false);
             setHasDragged(false);
@@ -144,59 +129,60 @@ export default function CanvasPreview({
             setInitialPinchSize(imageSettings.size);
             setInitialPinchCenter({ x: imageSettings.x, y: imageSettings.y });
         } else if (e.touches.length === 1) {
-            // Start drag - only if touch is on the image
+            // Start drag
             const mousePos = getMousePos(canvasRef.current, e);
-            if (isMouseOverImage(mousePos, canvasRef.current)) {
-                setIsDragging(true);
-                setHasDragged(false);
-                setTouchedImage(true);
-                setDragStart(mousePos);
-                setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
-                canvasRef.current.style.cursor = 'grabbing';
-            } else {
-                setTouchedImage(false);
-            }
+            setIsDragging(true);
+            setHasDragged(false);
+            setTouchedImage(true);
+            setDragStart(mousePos);
+            setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
+            canvasRef.current.style.cursor = 'grabbing';
         }
-    }, [uploadedImgLoaded, getMousePos, isMouseOverImage, imageSettings, onImageSettingsChange, getTouchDistance]);
+    }, [uploadedImgLoaded, getMousePos, imageSettings, onImageSettingsChange, getTouchDistance]);
 
     // Handle touch move for both drag and pinch
     const handleTouchMove = useCallback((e) => {
-        if (!canvasRef.current || !onImageSettingsChange) return;
+        if (!canvasRef.current || !onImageSettingsChange || !uploadedImgLoaded) return;
         e.preventDefault();
 
+        const frameWidth = frame ? frame.width : 1200;
+        const frameHeight = frame ? frame.height : 1200;
+
         if (isPinching && e.touches.length === 2) {
-            // Handle pinch-to-zoom with center origin - works from anywhere on canvas
+            // Handle pinch-to-zoom with center origin
             const currentDistance = getTouchDistance(e.touches);
-            const scale = currentDistance / initialPinchDistance;
-            const newSize = Math.round(initialPinchSize * scale);
+            if (initialPinchDistance > 0) {
+                const scale = currentDistance / initialPinchDistance;
+                const newSize = Math.round(initialPinchSize * scale);
 
-            // Clamp size to valid range
-            const minSize = Math.round(BASE_SIZE * MIN_PERCENTAGE / 100);
-            const maxSize = Math.round(BASE_SIZE * MAX_PERCENTAGE / 100);
-            const clampedSize = Math.max(minSize, Math.min(maxSize, newSize));
+                // Clamp size to valid range
+                const minSize = Math.round(BASE_SIZE * MIN_PERCENTAGE / 100);
+                const maxSize = Math.round(BASE_SIZE * MAX_PERCENTAGE / 100);
+                const clampedSize = Math.max(minSize, Math.min(maxSize, newSize));
 
-            // Zoom from center
-            const newPos = zoomFromCenter(clampedSize, initialPinchSize, initialPinchCenter.x, initialPinchCenter.y);
+                // Zoom from center
+                const newPos = zoomFromCenter(clampedSize, initialPinchSize, initialPinchCenter.x, initialPinchCenter.y);
 
-            setHasDragged(true); // Mark as dragged to avoid click
-            onImageSettingsChange({
-                ...imageSettings,
-                size: clampedSize,
-                x: newPos.x,
-                y: newPos.y
-            });
+                setHasDragged(true); // Mark as dragged to avoid click
+                onImageSettingsChange({
+                    ...imageSettings,
+                    size: clampedSize,
+                    x: newPos.x,
+                    y: newPos.y
+                });
+            }
         } else if (isDragging && e.touches.length === 1) {
             // Handle drag
             const mousePos = getMousePos(canvasRef.current, e);
-            const scale = canvasRef.current.width / frame.width;
+            const scale = canvasRef.current.width / frameWidth;
             const deltaX = (mousePos.x - dragStart.x) / scale;
             const deltaY = (mousePos.y - dragStart.y) / scale;
 
-            const newX = Math.max(-imageSettings.size * 0.5,
-                Math.min(frame.width - imageSettings.size * 0.5,
+            const newX = Math.max(-imageSettings.size * 0.8,
+                Math.min(frameWidth - imageSettings.size * 0.2,
                     initialImagePos.x + deltaX));
-            const newY = Math.max(-imageSettings.size * 0.5,
-                Math.min(frame.height - imageSettings.size * 0.5,
+            const newY = Math.max(-imageSettings.size * 0.8,
+                Math.min(frameHeight - imageSettings.size * 0.2,
                     initialImagePos.y + deltaY));
 
             if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
@@ -208,17 +194,19 @@ export default function CanvasPreview({
                 y: newY
             });
         }
-    }, [isPinching, isDragging, initialPinchDistance, initialPinchSize, initialPinchCenter, getTouchDistance, getMousePos, dragStart, initialImagePos, imageSettings, frame, onImageSettingsChange, zoomFromCenter, MIN_PERCENTAGE, MAX_PERCENTAGE, BASE_SIZE]);
+    }, [isPinching, isDragging, initialPinchDistance, initialPinchSize, initialPinchCenter, getTouchDistance, getMousePos, dragStart, initialImagePos, imageSettings, frame, onImageSettingsChange, zoomFromCenter, MIN_PERCENTAGE, MAX_PERCENTAGE, BASE_SIZE, uploadedImgLoaded]);
 
     // Handle touch end
     const handleTouchEnd = useCallback((e) => {
-        e.preventDefault();
+        if (uploadedImgLoaded) {
+            e.preventDefault();
+        }
         setIsPinching(false);
         const wasDragging = isDragging;
         setIsDragging(false);
 
-        // If not dragging and not pinching and touched an image, treat as click
-        if (!hasDragged && !wasDragging && !isPinching && touchedImage && onClick) {
+        // Only trigger click (file upload) if NO image is uploaded yet
+        if (!uploadedImgLoaded && !hasDragged && !wasDragging && !isPinching && onClick) {
             onClick();
         }
         setHasDragged(false);
@@ -227,38 +215,43 @@ export default function CanvasPreview({
         if (canvasRef.current) {
             canvasRef.current.style.cursor = 'default';
         }
-    }, [isDragging, hasDragged, isPinching, touchedImage, onClick]);
+    }, [isDragging, hasDragged, isPinching, onClick, uploadedImgLoaded]);
 
     // Mouse event handlers (for desktop)
     const handleMouseDown = useCallback((e) => {
-        if (!uploadedImgLoaded || !canvasRef.current || !onImageSettingsChange) return;
+        if (!canvasRef.current) return;
+
+        if (!uploadedImgLoaded) {
+            return;
+        }
+
+        if (!onImageSettingsChange) return;
 
         const mousePos = getMousePos(canvasRef.current, e);
-
-        if (isMouseOverImage(mousePos, canvasRef.current)) {
-            setIsDragging(true);
-            setHasDragged(false);
-            setDragStart(mousePos);
-            setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
-            canvasRef.current.style.cursor = 'grabbing';
-        }
-    }, [uploadedImgLoaded, getMousePos, isMouseOverImage, imageSettings, onImageSettingsChange]);
+        setIsDragging(true);
+        setHasDragged(false);
+        setDragStart(mousePos);
+        setInitialImagePos({ x: imageSettings.x, y: imageSettings.y });
+        canvasRef.current.style.cursor = 'grabbing';
+    }, [uploadedImgLoaded, getMousePos, imageSettings, onImageSettingsChange]);
 
     const handleMouseMove = useCallback((e) => {
         if (!canvasRef.current) return;
 
         const mousePos = getMousePos(canvasRef.current, e);
+        const frameWidth = frame ? frame.width : 1200;
+        const frameHeight = frame ? frame.height : 1200;
 
-        if (isDragging && onImageSettingsChange) {
-            const scale = canvasRef.current.width / frame.width;
+        if (isDragging && onImageSettingsChange && uploadedImgLoaded) {
+            const scale = canvasRef.current.width / frameWidth;
             const deltaX = (mousePos.x - dragStart.x) / scale;
             const deltaY = (mousePos.y - dragStart.y) / scale;
 
-            const newX = Math.max(-imageSettings.size * 0.5,
-                Math.min(frame.width - imageSettings.size * 0.5,
+            const newX = Math.max(-imageSettings.size * 0.8,
+                Math.min(frameWidth - imageSettings.size * 0.2,
                     initialImagePos.x + deltaX));
-            const newY = Math.max(-imageSettings.size * 0.5,
-                Math.min(frame.height - imageSettings.size * 0.5,
+            const newY = Math.max(-imageSettings.size * 0.8,
+                Math.min(frameHeight - imageSettings.size * 0.2,
                     initialImagePos.y + deltaY));
 
             if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
@@ -269,27 +262,27 @@ export default function CanvasPreview({
                 x: newX,
                 y: newY
             });
-        } else if (uploadedImgLoaded && isMouseOverImage(mousePos, canvasRef.current)) {
+        } else if (uploadedImgLoaded) {
             canvasRef.current.style.cursor = 'grab';
         } else {
-            canvasRef.current.style.cursor = 'default';
+            canvasRef.current.style.cursor = 'pointer';
         }
-    }, [isDragging, dragStart, initialImagePos, imageSettings, frame, getMousePos, isMouseOverImage, uploadedImgLoaded, onImageSettingsChange]);
+    }, [isDragging, dragStart, initialImagePos, imageSettings, frame, getMousePos, uploadedImgLoaded, onImageSettingsChange]);
 
     const handleMouseUp = useCallback(() => {
         const wasDragging = isDragging;
         setIsDragging(false);
 
-        // If not dragging, treat as click (only on desktop)
-        if (!hasDragged && !wasDragging && onClick) {
+        // Only trigger click (file upload) if NO image is uploaded yet
+        if (!uploadedImgLoaded && !hasDragged && !wasDragging && onClick) {
             onClick();
         }
         setHasDragged(false);
 
         if (canvasRef.current) {
-            canvasRef.current.style.cursor = 'default';
+            canvasRef.current.style.cursor = uploadedImgLoaded ? 'grab' : 'pointer';
         }
-    }, [isDragging, hasDragged, onClick]);
+    }, [isDragging, hasDragged, onClick, uploadedImgLoaded]);
 
     // Add event listeners
     useEffect(() => {

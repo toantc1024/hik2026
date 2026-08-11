@@ -27,11 +27,11 @@ export default function ImageFrameOverlay() {
   const [avatarCanvasSize, setAvatarCanvasSize] = useState({ width: 0, height: 0 });
   const [renderer, setRenderer] = useState(null);
 
-  // Image customization settings - Updated for 3750x3750 frame specifications
+  // Image customization settings - Default for 1200x1200 frame specifications
   const [squareImageSettings, setSquareImageSettings] = useState({
-    x: 510,   // Top left X position of the circular hole
-    y: 510,   // Top left Y position of the circular hole  
-    size: 2730  // Size of the circular area (diameter)
+    x: 0,   // Top left X position
+    y: 0,   // Top left Y position
+    size: 1200  // Size matching 1200x1200 frame
   });
 
   // Load frame images
@@ -70,11 +70,11 @@ export default function ImageFrameOverlay() {
   }, [avatarFrame]);
 
   // Frame area constants (where the avatar image should fit)
-  // Based on 3750x3750 frame with circular hole at center
+  // Based on 1200x1200 frame with circular/square hole at center
   const FRAME_AREA = {
-    x: 510,      // Top left X of circular hole
-    y: 510,      // Top left Y of circular hole
-    size: 2730   // Diameter of the circular area
+    x: 0,
+    y: 0,
+    size: 1200
   };
 
   // Handle image loading from ImageUploader component
@@ -84,7 +84,6 @@ export default function ImageFrameOverlay() {
     setUploadedImgLoaded(true);
 
     // Reset to default frame area position - image will be centered and fit
-    // The drawSquareImage function handles scaling and centering within the size
     setSquareImageSettings({
       x: FRAME_AREA.x,
       y: FRAME_AREA.y,
@@ -196,7 +195,11 @@ export default function ImageFrameOverlay() {
                 title=""
                 imageSettings={squareImageSettings}
                 onImageSettingsChange={setSquareImageSettings}
-                onClick={() => avatarInputRef.current?.click()}
+                onClick={() => {
+                  if (!uploadedImgLoaded) {
+                    avatarInputRef.current?.click();
+                  }
+                }}
               />
 
 
