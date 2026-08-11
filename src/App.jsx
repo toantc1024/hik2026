@@ -1,4 +1,3 @@
-// filepath: c:\Users\Deno\hvm\thanhdoan.pnt\src\App.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Container,
@@ -6,7 +5,8 @@ import {
   Grid,
   Tooltip,
 } from "@mantine/core";
-import AVATAR_FRAME from "./assets/avatar.png";
+import TSV_FRAME from "./assets/tsv.png";
+import CBVC_FRAME from "./assets/cbvc.png";
 import "./App.css";
 import "./fonts.css";
 
@@ -16,11 +16,15 @@ import CanvasPreview from "./components/CanvasPreview";
 import ImageFrameRenderer from "./components/ImageFrameRenderer";
 import ImageDownloader from "./components/ImageDownloader";
 import InAppBrowserAlert from "./components/InAppBrowserAlert";
-
+import FrameSwitcher from "./components/FrameSwitcher";
 
 export default function ImageFrameOverlay() {
-  // State management
+  // Frame selection state: 'tsv' (Tân sinh viên) or 'cbvc' (CBVC / Giảng viên / Người học)
+  const [selectedFrameType, setSelectedFrameType] = useState("tsv");
+  const [frameImages, setFrameImages] = useState({ tsv: null, cbvc: null });
   const [avatarFrame, setAvatarFrame] = useState(null);
+
+  // State management
   const [uploadedImg, setUploadedImg] = useState(null);
   const [uploadedImgLoaded, setUploadedImgLoaded] = useState(false);
   const [avatarFrameLoaded, setAvatarFrameLoaded] = useState(false);
@@ -34,27 +38,49 @@ export default function ImageFrameOverlay() {
     size: 1200  // Size matching 1200x1200 frame
   });
 
-  // Load frame images
+  // Load both frame images on component mount
   useEffect(() => {
-    // Load avatar frame
-    const avatarImg = new Image();
-    avatarImg.src = AVATAR_FRAME;
-    avatarImg.onload = () => {
-      setAvatarFrame(avatarImg);
-      setAvatarFrameLoaded(true);
-      setRenderer(new ImageFrameRenderer(null, avatarImg));
+    const tsvImg = new Image();
+    tsvImg.src = TSV_FRAME;
+
+    const cbvcImg = new Image();
+    cbvcImg.src = CBVC_FRAME;
+
+    let loaded = 0;
+    const checkLoaded = () => {
+      loaded++;
+      if (loaded === 2) {
+        setFrameImages({ tsv: tsvImg, cbvc: cbvcImg });
+        const activeImg = selectedFrameType === "cbvc" ? cbvcImg : tsvImg;
+        setAvatarFrame(activeImg);
+        setAvatarFrameLoaded(true);
+        setRenderer(new ImageFrameRenderer(null, activeImg));
+      }
     };
+
+    tsvImg.onload = checkLoaded;
+    cbvcImg.onload = checkLoaded;
   }, []);
+
+  // Update active frame when selectedFrameType changes
+  const handleSelectFrameType = useCallback((frameType) => {
+    setSelectedFrameType(frameType);
+    if (frameImages[frameType]) {
+      const activeImg = frameImages[frameType];
+      setAvatarFrame(activeImg);
+      if (renderer) {
+        renderer.avatarFrame = activeImg;
+      }
+    }
+  }, [frameImages, renderer]);
 
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      // Get the container width for the canvas (full width for desktop, less for mobile)
       const containerWidth = window.innerWidth >= 768
         ? window.innerWidth * 0.6
         : window.innerWidth * 0.85;
 
-      // Scale the avatar frame
       if (avatarFrame) {
         const scale = containerWidth / avatarFrame.width;
         setAvatarCanvasSize({
@@ -69,21 +95,17 @@ export default function ImageFrameOverlay() {
     return () => window.removeEventListener("resize", handleResize);
   }, [avatarFrame]);
 
-  // Frame area constants (where the avatar image should fit)
-  // Based on 1200x1200 frame with circular/square hole at center
+  // Frame area constants
   const FRAME_AREA = {
     x: 0,
     y: 0,
     size: 1200
   };
 
-  // Handle image loading from ImageUploader component
-  // Reset image position to center and fit the frame area
   const handleImageLoaded = useCallback((image) => {
     setUploadedImg(image);
     setUploadedImgLoaded(true);
 
-    // Reset to default frame area position - image will be centered and fit
     setSquareImageSettings({
       x: FRAME_AREA.x,
       y: FRAME_AREA.y,
@@ -120,17 +142,14 @@ export default function ImageFrameOverlay() {
         );
 
         const url = URL.createObjectURL(blob);
-        const fileName = `avatar_image.png`;
+        const fileName = `avatar_${selectedFrameType}.png`;
 
-        // Create and click link to download
         const link = document.createElement("a");
         link.download = fileName;
         link.href = url;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
-
 
         return { success: true, url, fileName };
       }
@@ -141,7 +160,6 @@ export default function ImageFrameOverlay() {
     }
   };
 
-  // Helper function to get the reason why the button is disabled
   const getDownloadDisabledReason = () => {
     if (!uploadedImgLoaded) {
       return "Vui lòng tải ảnh lên trước khi lưu";
@@ -153,9 +171,12 @@ export default function ImageFrameOverlay() {
 
   return (
     <div className="blue-theme-background" style={{
-      background: 'linear-gradient(135deg, #F0F6FF 0%, #FFF6F7 50%, #EEF5FF 100%)',
+      background: selectedFrameType === 'cbvc'
+        ? 'linear-gradient(135deg, #FFF0F0 0%, #FFFDF0 50%, #F0F6FF 100%)'
+        : 'linear-gradient(135deg, #F0F6FF 0%, #FFF6F7 50%, #EEF5FF 100%)',
       padding: '.5rem .5rem',
-      minHeight: '60vh'
+      minHeight: '60vh',
+      transition: 'background 0.5s ease'
     }}>
       {/* Alert for in-app browsers like Zalo */}
       <InAppBrowserAlert />
@@ -164,6 +185,12 @@ export default function ImageFrameOverlay() {
         <Grid gutter="md">
           <Grid.Col sm={12} md={4}>
             <Stack spacing="lg">
+              {/* Gradient Frame Switcher above Image Uploader */}
+              <FrameSwitcher
+                selectedFrameType={selectedFrameType}
+                onSelectFrameType={handleSelectFrameType}
+              />
+
               <AvatarUploader inputRef={avatarInputRef} onImageLoaded={handleImageLoaded} />
 
               <Tooltip
@@ -195,14 +222,13 @@ export default function ImageFrameOverlay() {
                 title=""
                 imageSettings={squareImageSettings}
                 onImageSettingsChange={setSquareImageSettings}
+                onSelectFrameType={handleSelectFrameType}
                 onClick={() => {
                   if (!uploadedImgLoaded) {
                     avatarInputRef.current?.click();
                   }
                 }}
               />
-
-
             </Stack>
           </Grid.Col>
         </Grid>
@@ -210,4 +236,3 @@ export default function ImageFrameOverlay() {
     </div>
   );
 }
-
