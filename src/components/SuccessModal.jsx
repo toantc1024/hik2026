@@ -39,7 +39,6 @@ function detectWebView() {
 
 export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
     const [webViewInfo, setWebViewInfo] = useState({ isInAppBrowser: false, isZalo: false, appName: '' });
-    const [canShare, setCanShare] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [shareError, setShareError] = useState(null);
 
@@ -47,47 +46,9 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
         if (isOpen) {
             const info = detectWebView();
             setWebViewInfo(info);
-            // Check if Web Share API is available
-            setCanShare(!!(navigator.share));
             setShareError(null);
         }
     }, [isOpen]);
-
-    // Handle share via Web Share API (PRIMARY METHOD for Zalo/in-app browsers)
-    const handleShare = async () => {
-        if (!imageUrl) return;
-
-        setIsSharing(true);
-        setShareError(null);
-
-        try {
-            // Convert blob URL to blob
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const file = new File([blob], fileName || 'khung_anh_dai_dien.png', { type: 'image/png' });
-
-            // Check if can share files
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Khung ảnh đại diện',
-                });
-            } else if (navigator.share) {
-                // Fallback: share without file
-                await navigator.share({
-                    title: 'Khung ảnh đại diện',
-                    text: 'Khung ảnh đại diện của tôi',
-                });
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error('Share error:', error);
-                setShareError('Không thể chia sẻ. Vui lòng thử cách khác.');
-            }
-        } finally {
-            setIsSharing(false);
-        }
-    };
 
     // Download image by creating a temporary link (for desktop browsers)
     const handleDownload = async () => {
@@ -111,6 +72,56 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
             console.error('Download failed:', error);
             // Fallback: open in new tab
             window.open(imageUrl, '_blank');
+        }
+    };
+
+    // Handle share via Web Share API with robust fallbacks for all browsers/webviews
+    const handleShare = async () => {
+        if (!imageUrl) return;
+
+        setIsSharing(true);
+        setShareError(null);
+
+        try {
+            // Convert blob URL to blob & file
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const file = new File([blob], fileName || 'khung_anh_dai_dien.png', { type: 'image/png' });
+
+            // 1. Try file share via Web Share API
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Khung ảnh đại diện',
+                });
+            } else if (navigator.share) {
+                // 2. Try link/text share via Web Share API
+                await navigator.share({
+                    title: 'Khung ảnh đại diện',
+                    text: 'Khung ảnh đại diện của tôi',
+                    url: window.location.href,
+                });
+            } else if (navigator.clipboard && window.ClipboardItem) {
+                // 3. Fallback: copy image to clipboard
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ [blob.type]: blob })
+                    ]);
+                    alert("Đã sao chép ảnh vào bộ nhớ tạm!");
+                } catch (clipErr) {
+                    await handleDownload();
+                }
+            } else {
+                // 4. Fallback: trigger download
+                await handleDownload();
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Share error:', error);
+                await handleDownload();
+            }
+        } finally {
+            setIsSharing(false);
         }
     };
 
@@ -180,7 +191,7 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                     >
                         <Stack gap="xs">
                             <Text size="sm">
-                                Để lưu ảnh, hãy nhấn nút <strong>"Lưu/Chia sẻ ảnh"</strong> bên dưới.
+                                Để lưu ảnh, hãy nhấn nút <strong>"Chia sẻ ảnh"</strong> hoặc <strong>"Tải ảnh xuống"</strong> bên dưới.
                             </Text>
                             <Text size="sm">
                                 Trong menu hiện ra, chọn <strong>"Lưu ảnh"</strong> hoặc <strong>"Save to Photos"</strong>.
@@ -198,51 +209,40 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
 
                 {/* Action buttons */}
                 <Stack gap="sm">
-                    {/* PRIMARY: Share button for in-app browsers (Web Share API) */}
-                    {canShare && imageUrl && webViewInfo.isInAppBrowser && (
-                        <Button
-                            onClick={handleShare}
-                            fullWidth
-                            variant="gradient"
-                            gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
-                            leftSection={<FiShare2 size={18} />}
-                            size="lg"
-                            radius="xl"
-                            loading={isSharing}
-                        >
-                            Lưu/Chia sẻ ảnh
-                        </Button>
-                    )}
+                    {imageUrl && (
+                        <>
+                            <Button
+                                onClick={handleDownload}
+                                fullWidth
+                                variant="gradient"
+                                gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
+                                leftSection={<FiDownload size={20} />}
+                                size="lg"
+                                radius="xl"
+                                style={{ borderRadius: '24px' }}
+                            >
+                                Tải ảnh xuống
+                            </Button>
 
-                    {/* DESKTOP: Direct download button */}
-                    {imageUrl && !webViewInfo.isInAppBrowser && (
-                        <Button
-                            onClick={handleDownload}
-                            fullWidth
-                            variant="gradient"
-                            gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
-                            leftSection={<FiDownload size={18} />}
-                            size="lg"
-                            radius="xl"
-                        >
-                            Tải ảnh xuống
-                        </Button>
-                    )}
-
-                    {/* Share for desktop */}
-                    {canShare && imageUrl && !webViewInfo.isInAppBrowser && (
-                        <Button
-                            onClick={handleShare}
-                            fullWidth
-                            variant="light"
-                            color="blue"
-                            leftSection={<FiShare2 size={18} />}
-                            size="md"
-                            radius="xl"
-                            loading={isSharing}
-                        >
-                            Chia sẻ ảnh
-                        </Button>
+                            <Button
+                                onClick={handleShare}
+                                fullWidth
+                                variant="filled"
+                                color="blue"
+                                leftSection={<FiShare2 size={20} />}
+                                size="lg"
+                                radius="xl"
+                                loading={isSharing}
+                                style={{
+                                    backgroundColor: '#0F4FE6',
+                                    color: '#ffffff',
+                                    borderRadius: '24px',
+                                    boxShadow: '0 4px 12px rgba(15, 79, 230, 0.25)'
+                                }}
+                            >
+                                Chia sẻ ảnh
+                            </Button>
+                        </>
                     )}
                 </Stack>
 
