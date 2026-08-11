@@ -131,8 +131,8 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
             onClose={onClose}
             title={
                 <Group gap="xs">
-                    <FiCheck size={20} color="green" />
-                    <Text fw={600}>Thành công</Text>
+                    <FiCheck size={18} color="green" />
+                    <Text fw={600} size="md">Thành công</Text>
                 </Group>
             }
             size="md"
@@ -141,17 +141,25 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
             styles={{
                 content: {
                     borderRadius: '24px',
+                    maxHeight: '90vh',
                 },
                 header: {
                     borderRadius: '24px 24px 0 0',
+                    paddingBottom: '4px',
+                },
+                body: {
+                    maxHeight: '75vh',
+                    overflowY: 'auto',
+                    paddingBottom: '12px',
                 }
             }}
         >
-            <Stack gap="md" style={{ paddingTop: '8px' }}>
+            <Stack gap="xs" style={{ paddingTop: '2px' }}>
                 <Box style={{
                     textAlign: 'center',
-                    fontSize: '1.1rem',
+                    fontSize: '1rem',
                     fontWeight: '500',
+                    color: '#333'
                 }}>
                     Ảnh đã được xử lý thành công!
                 </Box>
@@ -162,8 +170,8 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                         style={{
                             textAlign: 'center',
                             background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                            padding: '1rem',
-                            borderRadius: '20px',
+                            padding: '0.5rem',
+                            borderRadius: '16px',
                             border: '1px solid #e2e8f0',
                         }}
                     >
@@ -172,10 +180,10 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                             alt="Ảnh đã tạo"
                             style={{
                                 maxWidth: '100%',
-                                maxHeight: '200px',
+                                maxHeight: '130px',
                                 objectFit: 'contain',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                                borderRadius: '10px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                             }}
                         />
                     </Box>
@@ -184,31 +192,27 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                 {/* In-app browser warning and instructions */}
                 {webViewInfo.isInAppBrowser && (
                     <Alert
-                        icon={<FiAlertCircle size={18} />}
+                        icon={<FiAlertCircle size={16} />}
                         title={`Đang mở trong ${webViewInfo.appName}`}
                         color="blue"
-                        radius="lg"
+                        radius="md"
+                        p="xs"
                     >
-                        <Stack gap="xs">
-                            <Text size="sm">
-                                Để lưu ảnh, hãy nhấn nút <strong>"Chia sẻ ảnh"</strong> hoặc <strong>"Tải ảnh xuống"</strong> bên dưới.
-                            </Text>
-                            <Text size="sm">
-                                Trong menu hiện ra, chọn <strong>"Lưu ảnh"</strong> hoặc <strong>"Save to Photos"</strong>.
-                            </Text>
-                        </Stack>
+                        <Text size="xs">
+                            Để lưu ảnh, chọn <strong>"Chia sẻ ảnh"</strong> hoặc <strong>"Tải ảnh xuống"</strong> bên dưới.
+                        </Text>
                     </Alert>
                 )}
 
                 {/* Share error message */}
                 {shareError && (
-                    <Alert color="red" radius="lg">
-                        <Text size="sm">{shareError}</Text>
+                    <Alert color="red" radius="md" p="xs">
+                        <Text size="xs">{shareError}</Text>
                     </Alert>
                 )}
 
                 {/* Action buttons */}
-                <Stack gap="sm">
+                <Stack gap="xs" mt="xs">
                     {imageUrl && (
                         <>
                             <Button
@@ -216,10 +220,10 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                                 fullWidth
                                 variant="gradient"
                                 gradient={{ from: 'blue.6', to: 'purple.6', deg: 135 }}
-                                leftSection={<FiDownload size={20} />}
-                                size="lg"
+                                leftSection={<FiDownload size={18} />}
+                                size="md"
                                 radius="xl"
-                                style={{ borderRadius: '24px' }}
+                                style={{ borderRadius: '20px' }}
                             >
                                 Tải ảnh xuống
                             </Button>
@@ -229,15 +233,15 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                                 fullWidth
                                 variant="filled"
                                 color="blue"
-                                leftSection={<FiShare2 size={20} />}
-                                size="lg"
+                                leftSection={<FiShare2 size={18} />}
+                                size="md"
                                 radius="xl"
                                 loading={isSharing}
                                 style={{
                                     backgroundColor: '#0F4FE6',
                                     color: '#ffffff',
-                                    borderRadius: '24px',
-                                    boxShadow: '0 4px 12px rgba(15, 79, 230, 0.25)'
+                                    borderRadius: '20px',
+                                    boxShadow: '0 4px 12px rgba(15, 79, 230, 0.2)'
                                 }}
                             >
                                 Chia sẻ ảnh
@@ -251,8 +255,10 @@ export default function SuccessModal({ isOpen, onClose, imageUrl, fileName }) {
                     fullWidth
                     variant="subtle"
                     color="gray"
-                    rightSection={<FiX size={18} />}
+                    rightSection={<FiX size={16} />}
+                    size="xs"
                     radius="xl"
+                    mt="2px"
                 >
                     Đóng
                 </Button>
