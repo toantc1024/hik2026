@@ -171,12 +171,9 @@ export default function ImageFrameOverlay() {
 
   return (
     <div className="blue-theme-background" style={{
-      background: selectedFrameType === 'cbvc'
-        ? 'linear-gradient(135deg, #FFF0F0 0%, #FFFDF0 50%, #F0F6FF 100%)'
-        : 'linear-gradient(135deg, #F0F6FF 0%, #FFF6F7 50%, #EEF5FF 100%)',
+      background: 'linear-gradient(135deg, #F0F6FF 0%, #E6F0FA 100%)',
       padding: '.5rem .5rem',
-      minHeight: '60vh',
-      transition: 'background 0.5s ease'
+      minHeight: '60vh'
     }}>
       {/* Alert for in-app browsers like Zalo */}
       <InAppBrowserAlert />
