@@ -1,54 +1,115 @@
+import { useRef } from "react";
 import { Paper, Text, Box, UnstyledButton } from "@mantine/core";
 import { FiAward, FiUser } from "react-icons/fi";
 
 export default function FrameSwitcher({ selectedFrameType, onSelectFrameType }) {
     const isTsv = selectedFrameType === "tsv";
     const isCbvc = selectedFrameType === "cbvc";
+    const trackRef = useRef(null);
+    const touchStartRef = useRef(null);
+
+    // iOS Touch Start & Touch End gesture handling
+    const handleTouchStart = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            touchStartRef.current = e.touches[0].clientX;
+        }
+    };
+
+    const handleTouchEnd = (e) => {
+        if (touchStartRef.current === null) return;
+
+        const touchEnd = e.changedTouches[0].clientX;
+        const deltaX = touchEnd - touchStartRef.current;
+
+        if (deltaX > 25) {
+            // Swiped right -> CBVC / GV / Người học
+            onSelectFrameType("cbvc");
+        } else if (deltaX < -25) {
+            // Swiped left -> Tân sinh viên
+            onSelectFrameType("tsv");
+        } else if (trackRef.current) {
+            // Tap / Touch location determination
+            const rect = trackRef.current.getBoundingClientRect();
+            const relativeX = touchEnd - rect.left;
+            if (relativeX < rect.width / 2) {
+                onSelectFrameType("tsv");
+            } else {
+                onSelectFrameType("cbvc");
+            }
+        }
+
+        touchStartRef.current = null;
+    };
 
     return (
         <Paper
             p="md"
-            radius="xl"
             style={{
-                borderRadius: "24px",
+                borderRadius: "32px",
                 backgroundColor: "#ffffff",
-                border: "1.5px solid rgba(15, 79, 230, 0.25)",
-                boxShadow: "0 4px 16px rgba(15, 79, 230, 0.08)",
+                border: "1.5px solid rgba(15, 79, 230, 0.22)",
+                boxShadow: "0 6px 20px rgba(15, 79, 230, 0.08)",
+                userSelect: "none"
             }}
         >
             <Text size="xs" fw={700} mb="xs" style={{ color: "#0F4FE6", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                 Chọn đối tượng sử dụng frame
             </Text>
 
+            {/* iOS-Style Segmented Track */}
             <Box
+                ref={trackRef}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
                 style={{
+                    position: "relative",
                     display: "flex",
-                    backgroundColor: "#F0F4FA",
-                    borderRadius: "20px",
+                    backgroundColor: "#EEF2F6",
+                    borderRadius: "100px",
                     padding: "4px",
-                    border: "1px solid rgba(15, 79, 230, 0.15)",
+                    border: "1px solid rgba(15, 79, 230, 0.12)",
+                    overflow: "hidden",
+                    touchAction: "pan-y"
                 }}
             >
+                {/* iOS Active Sliding Pill */}
+                <Box
+                    style={{
+                        position: "absolute",
+                        top: "4px",
+                        bottom: "4px",
+                        left: "4px",
+                        width: "calc(50% - 4px)",
+                        borderRadius: "100px",
+                        backgroundColor: "#0F4FE6",
+                        transform: isCbvc ? "translateX(100%)" : "translateX(0%)",
+                        transition: "transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                        boxShadow: "0 3px 10px rgba(15, 79, 230, 0.35)",
+                        zIndex: 1
+                    }}
+                />
+
+                {/* Tab Buttons */}
                 <UnstyledButton
                     onClick={() => onSelectFrameType("tsv")}
                     style={{
                         flex: 1,
-                        padding: "10px 8px",
-                        borderRadius: "16px",
-                        backgroundColor: isTsv ? "#0F4FE6" : "transparent",
+                        padding: "10px 10px",
+                        borderRadius: "100px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: "6px",
                         fontWeight: 700,
                         fontSize: "13px",
-                        transition: "all 0.2s ease",
-                        boxShadow: isTsv ? "0 4px 12px rgba(15, 79, 230, 0.3)" : "none",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        position: "relative",
+                        zIndex: 2,
+                        transition: "color 0.2s ease"
                     }}
                 >
-                    <FiAward size={16} style={{ color: isTsv ? "#ffffff" : "#4A5568" }} />
-                    <span style={{ color: isTsv ? "#ffffff" : "#4A5568", fontWeight: 700 }}>
+                    <FiAward size={16} style={{ color: isTsv ? "#ffffff" : "#334155" }} />
+                    <span style={{ color: isTsv ? "#ffffff" : "#334155", fontWeight: 700 }}>
                         Tân sinh viên
                     </span>
                 </UnstyledButton>
@@ -57,22 +118,22 @@ export default function FrameSwitcher({ selectedFrameType, onSelectFrameType }) 
                     onClick={() => onSelectFrameType("cbvc")}
                     style={{
                         flex: 1,
-                        padding: "10px 8px",
-                        borderRadius: "16px",
-                        backgroundColor: isCbvc ? "#0F4FE6" : "transparent",
+                        padding: "10px 10px",
+                        borderRadius: "100px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: "6px",
                         fontWeight: 700,
                         fontSize: "12px",
-                        transition: "all 0.2s ease",
-                        boxShadow: isCbvc ? "0 4px 12px rgba(15, 79, 230, 0.3)" : "none",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        position: "relative",
+                        zIndex: 2,
+                        transition: "color 0.2s ease"
                     }}
                 >
-                    <FiUser size={16} style={{ color: isCbvc ? "#ffffff" : "#4A5568" }} />
-                    <span style={{ color: isCbvc ? "#ffffff" : "#4A5568", fontWeight: 700 }}>
+                    <FiUser size={16} style={{ color: isCbvc ? "#ffffff" : "#334155" }} />
+                    <span style={{ color: isCbvc ? "#ffffff" : "#334155", fontWeight: 700 }}>
                         CBVC / GV / Người học
                     </span>
                 </UnstyledButton>
