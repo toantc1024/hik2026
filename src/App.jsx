@@ -222,7 +222,6 @@ export default function ImageFrameOverlay() {
                 title=""
                 imageSettings={squareImageSettings}
                 onImageSettingsChange={setSquareImageSettings}
-                onSelectFrameType={handleSelectFrameType}
                 onClick={() => {
                   if (!uploadedImgLoaded) {
                     avatarInputRef.current?.click();

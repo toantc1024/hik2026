@@ -21,14 +21,12 @@ export default function CanvasPreview({
     title,
     imageSettings,
     onImageSettingsChange,
-    onClick, // Added onClick prop
-    onSelectFrameType
+    onClick // Added onClick prop
 }) {
     const canvasRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [initialImagePos, setInitialImagePos] = useState({ x: 0, y: 0 });
-    const [isDragOverFrame, setIsDragOverFrame] = useState(false);
 
     // Pinch-to-zoom state
     const [isPinching, setIsPinching] = useState(false);
@@ -343,62 +341,13 @@ export default function CanvasPreview({
         return Math.round((imageSettings.size / BASE_SIZE) * 100);
     }, [imageSettings?.size]);
 
-    const handleDragOver = (e) => {
-        if (e.dataTransfer.types.includes("frametype")) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
-            setIsDragOverFrame(true);
-        }
-    };
-
-    const handleDragLeave = () => {
-        setIsDragOverFrame(false);
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setIsDragOverFrame(false);
-        const frameType = e.dataTransfer.getData("frameType");
-        if (frameType && onSelectFrameType) {
-            onSelectFrameType(frameType);
-        }
-    };
-
     return (
-        <Paper
-            p="md"
-            radius="xl"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            style={{
-                width: "100%",
-                overflow: "hidden",
-                touchAction: "pan-y",
-                borderRadius: '24px',
-                position: 'relative'
-            }}
-        >
-            {isDragOverFrame && (
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundColor: 'rgba(15, 79, 230, 0.9)',
-                    borderRadius: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    fontWeight: 700,
-                    fontSize: '1.2rem',
-                    zIndex: 100,
-                    backdropFilter: 'blur(4px)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                    pointerEvents: 'none'
-                }}>
-                    🎯 Thả vào đây để áp dụng khung!
-                </div>
-            )}
+        <Paper p="md" radius="xl" style={{
+            width: "100%",
+            overflow: "hidden",
+            touchAction: "pan-y",
+            borderRadius: '24px'
+        }}>
             {title && (
                 <Text size="lg" weight={700} align="center" mb="md">
                     {title}
